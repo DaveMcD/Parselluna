@@ -1,0 +1,103 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>My Compiler Plumbing</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link type="text/css" rel="stylesheet" href="css/compiler.css" />
+    <link type="text/css" rel="stylesheet" href="css/base/jquery-ui.css" />
+    <link type="text/css" rel="stylesheet" href="css/ECOTree.css" />
+<!--
+    <link type="text/css" rel="stylesheet" href="css/JSTreeGraph.css"  />
+    <script type="text/javascript" src="vendor/ECOTree-1.5-icb-3.js" ></script>
+
+    <script type="text/javascript" src="vendor/JSTreeGraph.js" ></script>
+    <style type="text/css">
+        .SpecialNode
+        {
+            position:absolute;
+            background-color: Red;
+            border: 1px solid #5280FF;
+            text-align:center;
+            vertical-align:middle;
+            cursor:pointer;
+        }
+
+        .Container
+        {
+            position:absolute;
+            top:100px;
+            left:50px;
+        }
+    </style>
+-->
+    <script type="text/javascript"
+            src="vendor/require.js"
+            data-main="src/main-req">
+    </script>
+</head>
+<!--  skip the onload - html was not able to see it in a module loaded via requireJS
+    <body onload="init();">
+-->
+<body>
+
+<h1>[DaveMcD] Compiler Project Zero</h1>
+<p>
+    . . . <em>a simple parser for a simple grammar</em>:<br>
+    Derived from the sample code at         http://www.labouseur.com/courses/compilers/compilers/alan/<br>
+    Modified to minimize inline javascript code and modularized using requireJS <br>
+    Modified to support BDD/TDD - Behaviour (Test) Driven Development using Jasmine test framework and Karma test runner. <br>
+    Modified to include sample display of collapsible trees.  Currently, trees must have global window scope. <br>
+</p>
+<pre>
+G ::== E
+E ::== D O E | D
+D ::== 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
+O ::== + | -
+</pre>
+<div>
+    <img style="float:right;" src="img/CompilerPhases.png" alt="Compiler Phases diagram" />
+</div>
+<div>
+    <!-- some style for label would be nice, but it isn't essential -->
+    <label for="taSourceCode">Source Code:</label><br/><textarea id="taSourceCode" cols="32" rows="18">1+2</textarea>
+    <br>
+    <!--  skip the onclick specification, do it in webPageInterface
+        <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
+    -->
+        <input type="button" id="btnCompile" value="Compile" />
+    <br>
+    <!-- some style for label would be nice, but it isn't essential -->
+    <label for="taOutput">Parser Output:</label><br/><textarea id="taOutput" cols="32" rows="18"></textarea>
+    </div>
+
+    <!-- ECOTree courtesy of Emilio Cortegoso Lobato &copy;2006 -->
+    <div id="concreteTreeContainer">
+        <!-- to be populated by window.concreteTreeDisplay -->
+    </div>
+
+    <div id="abstractTreeContainer">
+        <!-- to be populated by window.abstractTreeDisplay -->
+    </div>
+
+    <!-- Footer -->
+    <p>
+        <a href="http://validator.w3.org/check?uri=referer">
+            <img src="img/w3cvalidhtml5.jpg" alt="Valid HTML5" width="88" height="31" />
+        </a>
+    </p>
+    <!-- Client-side code down here, per the YSlow advice. 
+    // (http://developer.yahoo.com/performance/rules.html#js_bottom)
+    //  dependencies will be loaded via require.js, rather than from HTML
+        <script type="text/javascript" src="src/lib/util.js"></script>
+        <script type="text/javascript" src="src/lexer.js"></script>
+        <script type="text/javascript" src="src/parse.js"></script>
+    // end of src loaded via requireJS
+    // webPageInterface loaded from HTML so it can see document fields
+    // there is probably a way for modules loaded via requireJS to see them,
+        <script type="text/javascript" src="src/webPageInterface.js"></script>
+    // For expediency, I stopped trying to figure that out once it worked this way,
+    // but then stumbled across the fragile magic combination.
+    // So now, RequireJS handles all the dependency analysis and loading
+    -->
+    </body>
+</html>
