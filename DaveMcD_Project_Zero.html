@@ -1,35 +1,14 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>My Compiler Plumbing</title>
+    <title>DaveMcD Parse LL una Compiler </title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="css/anna_style.css" >
     <link type="text/css" rel="stylesheet" href="css/compiler.css" />
     <link type="text/css" rel="stylesheet" href="css/base/jquery-ui.css" />
     <link type="text/css" rel="stylesheet" href="css/ECOTree.css" />
-<!--
-    <link type="text/css" rel="stylesheet" href="css/JSTreeGraph.css"  />
-    <script type="text/javascript" src="vendor/ECOTree-1.5-icb-3.js" ></script>
+    <script type="text/javascript" src="src/anna_javascriptcandy.js"></script>
 
-    <script type="text/javascript" src="vendor/JSTreeGraph.js" ></script>
-    <style type="text/css">
-        .SpecialNode
-        {
-            position:absolute;
-            background-color: Red;
-            border: 1px solid #5280FF;
-            text-align:center;
-            vertical-align:middle;
-            cursor:pointer;
-        }
-
-        .Container
-        {
-            position:absolute;
-            top:100px;
-            left:50px;
-        }
-    </style>
--->
     <script type="text/javascript"
             src="vendor/require.js"
             data-main="src/main-req">
@@ -37,47 +16,192 @@
 </head>
 <!--  skip the onload - html was not able to see it in a module loaded via requireJS
     <body onload="init();">
+<div>
+    <img style="float:right;" src="img/CompilerPhases.png" alt="Compiler Phases diagram" />
+</div>
 -->
 <body>
 
-<h1>[DaveMcD] Compiler Project Zero</h1>
+
+
+<div>
+    <!-- some style for label would be nice, but it isn't essential
+    <label for="taSourceCode">Source Code:</label><br/><textarea id="taSourceCode" cols="32" rows="18">1+2</textarea>
+    <br>
+     -->
+    <!--  skip the onclick specification, do it in webPageInterface
+        <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
+        <input type="button" id="btnCompile" value="Compile" />
+    -->
+    <!-- some style for label would be nice, but it isn't essential
+    <br>
+    <label for="taOutput">Parser Output:</label><br/><textarea id="taOutput" cols="32" rows="18"></textarea>
+    </div>
+     -->
+
+  <table width=100% border=0 cellpadding=5>
+     <tr height = 90%>
+        <td width=30% align=center valign=top>
+        <h1>[DaveMcD] Parse LL una Compiler</h1>
+           <h2>Anna's Page Layout</h2>
 <p>
     . . . <em>a simple parser for a simple grammar</em>:<br>
+    Web page layout inspired by Anna <br>
+    <!--
+    (and derived from) http://www.labouseur.com/courses/compilers/compilers/annac/compiler.html<br>
     Derived from the sample code at         http://www.labouseur.com/courses/compilers/compilers/alan/<br>
     Modified to minimize inline javascript code and modularized using requireJS <br>
     Modified to support BDD/TDD - Behaviour (Test) Driven Development using Jasmine test framework and Karma test runner. <br>
     Modified to include sample display of collapsible trees.  Currently, trees must have global window scope. <br>
+    -->
 </p>
-<pre>
+           <form id="myform">
+              <textarea id="taSourceCode">1+2</textarea>
+    <!-- some style for label would be nice, but it isn't essential -->
+<!--  skip the onclick specification, do it in webPageInterface
+<label for="taSourceCode">Source Code:</label><br/><textarea id="taSourceCode" cols="32" rows="18">1+2</textarea>
+<br>
+            <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
+           <center><input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/></center>
+-->
+<br>
+           </form>
+           <script type="text/javascript">createTextAreaWithLines('taSourceCode');</script>
+            <input type="button" id="btnCompile" value="Compile" /><br>
+
+            <textarea id="taGrammar" cols="45" rows="18"  disabled="disabled" >
+G ::== E
+E ::== D O E
+  ::== D
+D ::== 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
+O ::== + | -
+            </textarea>
+            <br>
+        <!--    <input type="button" id="btnReadGrammar" value="Unlock Grammar" onclick="btnReadGrammar_click();"/> -->
+            <input type="button" id="btnReadGrammar" value="Unlock Grammar"/>
+            <br>
+
+           <h5>
+<!-- <pre>
 G ::== E
 E ::== D O E | D
 D ::== 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
 O ::== + | -
-</pre>
-<div>
-    <img style="float:right;" src="img/CompilerPhases.png" alt="Compiler Phases diagram" />
-</div>
-<div>
-    <!-- some style for label would be nice, but it isn't essential -->
-    <label for="taSourceCode">Source Code:</label><br/><textarea id="taSourceCode" cols="32" rows="18">1+2</textarea>
-    <br>
-    <!--  skip the onclick specification, do it in webPageInterface
-        <input type="button" id="btnCompile" value="Compile" onclick="btnCompile_click();"/>
-    -->
-        <input type="button" id="btnCompile" value="Compile" />
-    <br>
-    <!-- some style for label would be nice, but it isn't essential -->
-    <label for="taOutput">Parser Output:</label><br/><textarea id="taOutput" cols="32" rows="18"></textarea>
-    </div>
+</pre> -->
+        </td>
+        <td width=70% halign=left valign=top>
+              <table align=top border=0>
+                 <tr>
+                    <td>
+                       Lex Results
+                    </td>
+                    <td>
+                       Token Stream
+                    </td>
+                 </tr>
+                 <tr>
+                    <td width=450px>
+                       <textarea id="taLexResults"></textarea><br>
+                    </td>
+                    <td width=450px>
+                       <textarea id="taLexOutput"></textarea><br>
+                    </td>
+                 </tr>
 
-    <!-- ECOTree courtesy of Emilio Cortegoso Lobato &copy;2006 -->
-    <div id="concreteTreeContainer">
-        <!-- to be populated by window.concreteTreeDisplay -->
-    </div>
+                 <tr>
+                    <td>
+                       Parse Results
+                    </td>
+                    <td>
+                       Concrete Syntax Tree
+                    </td>
+                 </tr>
+                 <tr>
+                    <td>
+                       <textarea id="taParseResults"></textarea><br>
+                    </td>
+                    <td>
+                       <textarea id="taParseCST"></textarea><br>
+                    </td>
+                 </tr>
+                 <tr>
+                    <td>
+                       Scope/Type Checking Results
+                    </td>
+                    <td>
+                       Symbol Table
+                    </td>
+                 </tr>
 
-    <div id="abstractTreeContainer">
-        <!-- to be populated by window.abstractTreeDisplay -->
-    </div>
+                 <tr>
+                    <td>
+                       <textarea id="taTypeResults"></textarea><br>
+                    </td>
+                    <td>
+                       <textarea id="taParseScope"></textarea><br>
+                    </td>
+                 </tr>
+                <!--
+                 <tr>
+                    <td>
+                       Abstract Syntax Tree
+                    </td>
+                    <td>
+                       Code
+                    </td>
+                 </tr>
+                 <tr>
+                    <td>
+                       <textarea id="taParseAST"></textarea><br>
+                    </td>
+                    <td>
+                       <textarea id="taCode"></textarea><br>
+                    </td>
+                 </tr>
+
+                 <tr>
+                    <td>
+                       Static Table
+                    </td>
+                    <td>
+                       Jump Table
+                    </td>
+                 </tr>
+                 <tr>
+                    <td>
+                       <textarea id="taStatic"></textarea><br>
+                    </td>
+                    <td>
+                       <textarea id="taJump"></textarea><br>
+                    </td>
+                 </tr>
+              -->
+              </table>
+        </td>
+     </tr>
+      <table width="100%"">
+      <tr>
+          <td width=60% align=center valign=top>
+              <!-- ECOTree courtesy of Emilio Cortegoso Lobato &copy;2006 -->
+              <div id="concreteTreeContainer">
+                  <!-- to be populated by window.concreteTreeDisplay -->
+              </div>
+
+          <td width=2% align=center valign=top>
+          </td>
+          </td>
+          <td width=40% align=center valign=top>
+              <div id="abstractTreeContainer">
+                  <!-- to be populated by window.abstractTreeDisplay -->
+              </div>
+
+          </td>
+      </tr>
+      </table>
+  </table>
+
+
+
 
     <!-- Footer -->
     <p>

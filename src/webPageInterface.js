@@ -31,14 +31,27 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
     {
         logD("in webPageInterface/init SIXTH ");
         document.getElementById("btnCompile").onclick = btnCompile_click;
+        var btnGram = document.getElementById("btnReadGrammar");
+        btnGram.onclick = function() {
+           if (btnGram.value === "Unlock Grammar") {
+               btnGram.value = "Parse Grammar";
+               btnGram.disabled = false;
+           } else {
+               btnGram.value = "Unlock Grammar";
+               btnGram.disabled = true;
+               alert("Woot!  Grammar has been fake parsed, and locked again.");
+           }
+        };
         logD("in webPageInterface/init, assigned onclick... } SEVENTH");
-        util.setMessageTextArea("taOutput");
+        // util.setMessageTextArea("taOutput");
+        util.setMessageTextArea("taParseResults");
 
         // Draw sample tree at bottom of page
         // var treeDiv = document.getElementById("myParseTreeContainer");
 
-        window.concreteTreeDisplay = CreateECOTree('concreteTreeDisplay', 'concreteTreeContainer');
-        window.abstractTreeDisplay = CreateECOTree('abstractTreeDisplay', 'abstractTreeContainer');
+        window.concreteTreeDisplay = CreateECOTree('concreteTreeDisplay',
+                                                   'concreteTreeContainer', "#FFCCCC");
+        window.abstractTreeDisplay = CreateECOTree('abstractTreeDisplay', 'abstractTreeContainer', "#77FF77");
         // or window.concreteTree = new ECOTree('concreteTree', 'myConcreteTreeContainer');
         // then configure, populate (with add), and window.concreteTree.UpdateTree();
 
@@ -47,7 +60,7 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
 
     function resetCompilation() {
         // Clear the message box.
-        document.getElementById("taOutput").value = "";
+        document.getElementById("taParseResults").value = "";
         // Set the initial values for our globals.
     //    errorCount = 0;
     }
@@ -104,12 +117,17 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
     } /* end btnCompile_click */
 
     // var myTree = null;
-    function CreateECOTree(myTreeVarName, myContainer) {
+    function CreateECOTree(myTreeVarName, myContainer, defaultNodeColor) {
         var newTree;
 
-        newTree = new ECOTree(myTreeVarName, myContainer);
-        newTree.config.colorStyle = ECOTree.CS_LEVEL;
-        newTree.config.nodeFill = ECOTree.NF_GRADIENT;
+
+            newTree = new ECOTree(myTreeVarName, myContainer);
+        newTree.config.nodeColor = defaultNodeColor || "#9999FF";
+        // newTree.config.nodeColor = "#FFAAAA";
+     //   newTree.config.colorStyle = ECOTree.CS_LEVEL;
+        newTree.config.colorStyle = ECOTree.CS_NODE;
+     //   newTree.config.nodeFill = ECOTree.NF_GRADIENT;
+        newTree.config.nodeFill = ECOTree.NF_FLAT;
         newTree.config.useTarget = false;
         newTree.config.selectMode = ECOTree.SL_MULTIPLE;
         newTree.config.defaultNodeWidth = 65;
@@ -118,7 +136,7 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
         newTree.config.iSiblingSeparation = 20;
         newTree.config.iLevelSeparation = 30;
         newTree.add(1,  -1, '. (period)');
-        newTree.add(2,   1, 'that',  80, 40);
+        newTree.add(2,   1, 'that',  80, 40, "#FF7777");
         newTree.add(3,   2, 'think',  -1, -1);
         newTree.add(4,   3, 'I',  90, 18);
         newTree.add(5,   2, 'shall', 120, 30);
