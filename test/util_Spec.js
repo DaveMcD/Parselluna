@@ -6,17 +6,7 @@
 /* inform jshint not to warn that these jasmine functions are not defined */
 /*global describe, it, before, beforeEach, after, afterEach, expect, */
 /*global logC, logD */
-define([
-    // all specs should require the SpecHelper
-    // with jasmine setup and plugins
-    'SpecHelper',
-
-    // spec dependencies
-    'util'
-],
-function(
-    JazzMan,        // do NOT refer to this guy, he will be undefined.
-    util) {
+define(['util'], function(util) {
     "use strict";
 
     logD("enter util_Spec.js define()");

@@ -16,16 +16,16 @@ module.exports = function(config) {
         basePath: '',
 
         // frameworks to use
-        frameworks: ['jasmine', 'requirejs'],
+        frameworks: ['requirejs', 'jasmine'],
 
         // list of files / patterns to load in the browser
         files: [
+            'test/test-main-req.js',
+
             {pattern: 'vendor/**/*.js', included: false},
             {pattern: 'src/**/*.js', included: false},
             {pattern: 'test/**/*Spec.js', included: false},
-            {pattern: 'test/**/SpecHelper.js', included: false},
-
-            'test/test-main-req.js'
+            {pattern: 'test/**/SpecHelper.js', included: false}
         ],
 
         // list of files to exclude

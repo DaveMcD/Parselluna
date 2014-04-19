@@ -6,17 +6,7 @@
 /* inform jshint not to warn that these jasmine functions are not defined */
 /*global describe, it, before, beforeEach, after, afterEach, expect, */
 /*global logC, logD */
-define([
-    // all specs should require the SpecHelper
-    // with jasmine setup and plugins
-    'SpecHelper' ,
-
-    // spec dependencies
-    'lexer'
-],
-function(
-    JazzMan,        // do NOT refer to this guy, he will be undefined.
-    lexer) {
+define(['lexer'], function(lexer) {
     "use strict";
     logD("enter lexer_Spec.js define()");
 
