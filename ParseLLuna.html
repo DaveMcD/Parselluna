@@ -40,23 +40,27 @@
      -->
 
   <table width=100% border=0 cellpadding=5>
-     <tr height = 90%>
+     <tr> <!-- height = 90% -->
         <td width=30% align=center valign=top>
         <h1>[DaveMcD] Parse LL una Compiler</h1>
            <h2>Anna's Page Layout</h2>
-<p>
-    . . . <em>a simple parser for a simple grammar</em>:<br>
-    Web page layout inspired by Anna <br>
-    <!--
-    (and derived from) http://www.labouseur.com/courses/compilers/compilers/annac/compiler.html<br>
-    Derived from the sample code at         http://www.labouseur.com/courses/compilers/compilers/alan/<br>
-    Modified to minimize inline javascript code and modularized using requireJS <br>
-    Modified to support BDD/TDD - Behaviour (Test) Driven Development using Jasmine test framework and Karma test runner. <br>
-    Modified to include sample display of collapsible trees.  Currently, trees must have global window scope. <br>
-    -->
-</p>
+            <p>
+            . . . <em>a simple parser for a simple grammar</em>:<br>
+            Web page layout inspired by Anna <br>
+            <!--
+            (and derived from) http://www.labouseur.com/courses/compilers/compilers/annac/compiler.html<br>
+            Derived from the sample code at         http://www.labouseur.com/courses/compilers/compilers/alan/<br>
+            Modified to minimize inline javascript code and modularized using requireJS <br>
+            Modified to support BDD/TDD - Behaviour (Test) Driven Development using Jasmine test framework and Karma test runner. <br>
+            Modified to include sample display of collapsible trees.  Currently, trees must have global window scope. <br>
+            -->
+            </p>
            <form id="myform">
-              <textarea id="taSourceCode">1+2</textarea>
+               <!-- text area bug in IE9.  See
+                   // http://connect.microsoft.com/IE/feedback/details/818266/newline-n-problem-with-whitespace-nowrap-or-whitespace-normal-in-textarea
+               -->
+               <label for="taSourceCode" ></label><br>
+               <textarea id="taSourceCode">1+2</textarea>
     <!-- some style for label would be nice, but it isn't essential -->
 <!--  skip the onclick specification, do it in webPageInterface
 <label for="taSourceCode">Source Code:</label><br/><textarea id="taSourceCode" cols="32" rows="18">1+2</textarea>
@@ -69,139 +73,138 @@
            <script type="text/javascript">createTextAreaWithLines('taSourceCode');</script>
             <input type="button" id="btnCompile" value="Compile" /><br>
 
-            <textarea id="taGrammar" cols="45" rows="18"  disabled="disabled" >
+            <label for="taGrammar"></label><br>
+            <textarea id="taGrammar" cols="45" rows="18"  readOnly="readOnly" >
 G ::== E
 E ::== D O E
   ::== D
 D ::== 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
 O ::== + | -
-            </textarea>
+            </textarea> <!-- may need to avoid a blank line at end of grammar -->
             <br>
         <!--    <input type="button" id="btnReadGrammar" value="Unlock Grammar" onclick="btnReadGrammar_click();"/> -->
             <input type="button" id="btnReadGrammar" value="Unlock Grammar"/>
             <br>
 
-           <h5>
-<!-- <pre>
-G ::== E
-E ::== D O E | D
-D ::== 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
-O ::== + | -
-</pre> -->
+           <h5> </h5>
         </td>
-        <td width=70% halign=left valign=top>
+        <td width=70% valign=top> <!-- halign=left  -->
               <table align=top border=0>
                  <tr>
                     <td>
-                       Lex Results
+                        <label for="taLexResults">Lex Results</label>
                     </td>
                     <td>
-                       Token Stream
+                        <label for="taLexOutput">Token Stream</label>
                     </td>
                  </tr>
                  <tr>
                     <td width=450px>
-                       <textarea id="taLexResults"></textarea><br>
+                       <textarea id="taLexResults" readOnly="readOnly" ></textarea><br>
                     </td>
                     <td width=450px>
-                       <textarea id="taLexOutput"></textarea><br>
+                       <textarea id="taLexOutput" readOnly="readOnly" ></textarea><br>
                     </td>
                  </tr>
 
                  <tr>
                     <td>
-                       Parse Results
+                        <label for="taParseResults">Parse Results</label>
                     </td>
                     <td>
-                       Concrete Syntax Tree
-                    </td>
-                 </tr>
-                 <tr>
-                    <td>
-                       <textarea id="taParseResults"></textarea><br>
-                    </td>
-                    <td>
-                       <textarea id="taParseCST"></textarea><br>
+                        <label for="taParseCST">Concrete Syntax Tree</label>
                     </td>
                  </tr>
                  <tr>
                     <td>
-                       Scope/Type Checking Results
+                       <textarea id="taParseResults" readOnly="readOnly"  ></textarea><br>
                     </td>
                     <td>
-                       Symbol Table
+                       <textarea id="taParseCST" readOnly="readOnly" ></textarea><br>
+                    </td>
+                 </tr>
+                 <tr>
+                    <td>
+                        <label for="taTypeResults">Scope/Type Checking Results</label>
+                    </td>
+                    <td>
+                        <label for="taParseScope">Symbol Table</label>
                     </td>
                  </tr>
 
                  <tr>
                     <td>
-                       <textarea id="taTypeResults"></textarea><br>
+                       <textarea id="taTypeResults" readOnly="readOnly" ></textarea><br>
                     </td>
                     <td>
-                       <textarea id="taParseScope"></textarea><br>
+                       <textarea id="taParseScope" readOnly="readOnly" ></textarea><br>
                     </td>
                  </tr>
                 <!--
                  <tr>
                     <td>
-                       Abstract Syntax Tree
+                       <label for="taParseAST">Abstract Syntax Tree</label>
                     </td>
                     <td>
-                       Code
+                       <label for="taCode">Code</label>
                     </td>
                  </tr>
                  <tr>
                     <td>
-                       <textarea id="taParseAST"></textarea><br>
+                       <textarea id="taParseAST" readOnly="readOnly" ></textarea><br>
                     </td>
                     <td>
-                       <textarea id="taCode"></textarea><br>
+                       <textarea id="taCode" readOnly="readOnly" ></textarea><br>
                     </td>
                  </tr>
 
                  <tr>
                     <td>
-                       Static Table
+                       <label for="taStatic">Static Table</label>
                     </td>
                     <td>
-                       Jump Table
+                       <label for="taJump">Jump Table</label>
                     </td>
                  </tr>
                  <tr>
                     <td>
-                       <textarea id="taStatic"></textarea><br>
+                       <textarea id="taStatic" readOnly="readOnly" ></textarea><br>
                     </td>
                     <td>
-                       <textarea id="taJump"></textarea><br>
+                       <textarea id="taJump" readOnly="readOnly" ></textarea><br>
                     </td>
                  </tr>
               -->
               </table>
         </td>
      </tr>
-      <table width="100%"">
+      <!-- JetBrains code inspection says that table is not allowed here,
+       //  but... if the table tag is commented out,
+       //  we lose the spacing between middle and right side text areas -->
+      <table width="100%"" >
       <tr>
           <td width=60% align=center valign=top>
               <!-- ECOTree courtesy of Emilio Cortegoso Lobato &copy;2006 -->
               <div id="concreteTreeContainer">
                   <!-- to be populated by window.concreteTreeDisplay -->
               </div>
-
+          </td>
+          <!--
           <td width=2% align=center valign=top>
+              <div></div>
           </td>
-          </td>
+          -->
           <td width=40% align=center valign=top>
               <div id="abstractTreeContainer">
                   <!-- to be populated by window.abstractTreeDisplay -->
               </div>
-
           </td>
       </tr>
       </table>
   </table>
 
 
-
+</div>
 
     <!-- Footer -->
     <p>

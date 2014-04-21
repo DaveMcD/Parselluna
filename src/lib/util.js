@@ -74,13 +74,75 @@ define(function() {
         logC("Msg> " + msgString);
     }
 
+    /*
+     * returns a hash of first and last index for each first char in strings
+     */
+    function indexFL(sortedStringArray) {
+        // if( Object.prototype.toString.call( sortedStringArray ) !== '[object Array]' ) {
+        if( !Array.isArray(sortedStringArray) ) {
+            alert( 'Hey, where is the Array?' );
+            // console.log("addRule got an array.  hurray");
+            // reverse this logic, and throw error if not array
+            throw new TypeError("util.indexFL: sortedStringArray is not an array");
+        }
+
+        var firstCharIndex = {};
+        var arr = sortedStringArray;
+        var len = sortedStringArray.length;
+        var firstChar = "";
+        var priorChar = "";
+        var ii;
+        if (len < 2) {
+            if (len < 1) {
+                logC("util.indexFL: useless zero length index returned");
+            } else {
+                firstChar = arr[0].charAt(0);
+                firstCharIndex[firstChar] = [0, 0];
+            }
+            return firstCharIndex;
+        }
+        // now we know there are two or more strings in array, so this will be safe.
+        for (ii = 0; ii < len - 1; ++ii) {
+            if (arr[ii] >= arr[ii+1]) { throw new Error("non-sorted (or with duplicates) array passed to util.indexFL")};
+        }
+
+        firstChar = arr[0].charAt(0);
+        firstCharIndex[firstChar] = [0, 0];
+        priorChar = firstChar;
+        for (ii = 0; ii < len; ++ii) {
+            firstChar = arr[ii].charAt(0);
+            if (firstChar === priorChar) {
+                // update lastIndex for this initial char
+                firstCharIndex[firstChar][1] = ii;
+            } else {
+                firstCharIndex[firstChar] = [ii, ii];
+            }
+            priorChar = firstChar;
+        }
+
+        return firstCharIndex;
+    }
 
     function setMessageTextArea(taIdString) {
         messageAreaID = taIdString;
         messageAreaHandle   = document.getElementById(taIdString);
     }
 
+    function addToMessage(textAreaID, msgString) {
+        var taHandle;
+        taHandle = document.getElementById(textAreaID);
+        if ('undefined' === typeof taHandle) {
+            logC("textArea", textAreaID,  "not defined");
+        } else {
+            taHandle.value += msgString + "\n";
+        }
+        logC("Msg> " + msgString);
+    }
+
+
     logD("leave util.js define( no dependencies), returning function references FIRST");
-    return { trim: trim, rot13: rot13, logC: logC, logD: logD, setMessageTextArea: setMessageTextArea, putMessage: putMessage };
+    return { trim: trim, rot13: rot13, logC: logC, logD: logD, indexFL: indexFL,
+        setMessageTextArea: setMessageTextArea, putMessage: putMessage,
+        addToMessage: addToMessage};
 
 }); // closure for requirejs define()

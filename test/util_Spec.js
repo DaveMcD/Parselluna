@@ -61,6 +61,60 @@ define(['util'], function(util) {
                 expect(util.rot13("123*()")).toEqual("123*()");
             });
         });
+
+        // case sensitive, Caps before lowerCase
+        describe("indexFL", function () {
+            var indexFL = util.indexFL;
+            beforeEach(function () {
+
+                rotated = "AZ7nm";
+            });
+
+            it("should return empty object if input is empty", function () {
+                var emptyList = [];
+                var emptyListAnswer = {};
+                expect(indexFL(emptyList)).toEqual(emptyListAnswer);
+            });
+
+            it("should give obvious answer for one member list", function () {
+                var oneItemList = ['LonelyString'];
+                var oneItemAnswer = { 'L': [0, 0] };
+                expect(indexFL(oneItemList)).toEqual(oneItemAnswer);
+            });
+
+            it("should throw Error if input is not sorted", function () {
+                var unsortedList = ['Whiskey', 'Tango', 'Foxtrot'];
+                expect(util.indexFL.bind(null, unsortedList)).toThrow("non-sorted (or with duplicates) array passed to util.indexFL");
+            });
+
+            it("should throw Error if input contains duplicates", function () {
+                var dupesList = ['Hotel', 'Sierra', 'Sierra', 'Whiskey'];
+                expect(util.indexFL.bind(null, dupesList)).toThrow("non-sorted (or with duplicates) array passed to util.indexFL");
+            });
+
+            describe("and do some useful things with two or more in order", function () {
+                var stringList = ['Alpha', 'Apple', 'Baker', 'Bravo', 'Charlie', 'Zebra', 'apple', 'zebra', 'zephyr'];
+                var indexAZ = indexFL(stringList);
+
+                it("for example, get the first, middle and last entries correct", function () {
+                    var firstAndLast_A = [0, 1];
+                    var firstAndLast_C = [4, 4];
+                    var firstAndLast_z = [7, 8];
+                    expect(indexAZ['A']).toEqual(firstAndLast_A);
+                    expect(indexAZ['C']).toEqual(firstAndLast_C);
+                    expect(indexAZ['z']).toEqual(firstAndLast_z);
+                });
+
+                it("and absent initials should be undefined", function () {
+                    var firstAndLast_A = [0, 1];
+                    var firstAndLast_C = [4, 4];
+                    var firstAndLast_z = [7, 8];
+                    expect(indexAZ['D']).toBeUndefined();
+                    expect(indexAZ['y']).toBeUndefined();
+                });
+
+            });
+        });
     });
 
     logD("leave util_Spec.js define()");

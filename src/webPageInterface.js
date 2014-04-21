@@ -4,7 +4,7 @@
  */
 
 // using require() because there is something(init) we want executed immediately when loaded
-require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer, parse, notECOTree, domReady) {
+require(['util', 'Grammar', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, Grammar, lexer, parse, notECOTree, domReady) {
 // require(['util', 'lexer', 'parse', 'domReady'], function(util, lexer, parse, domReady) {
 // use above, if not using deferred loading of lexer
 // use below, if using deferred loading of lexer
@@ -19,6 +19,7 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
     var logD = util.logD;                   // take the default from util
     //  logC = function(){};                // to silence console logging
     //  logC = console.log.bind(console);   // to restore console logging
+    var taMsg = util.addToMessage;
 
     logD("enter webPageInterface/require(require, util, parse(, lexer)), at top FOURTH");
 
@@ -32,14 +33,18 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
         logD("in webPageInterface/init SIXTH ");
         document.getElementById("btnCompile").onclick = btnCompile_click;
         var btnGram = document.getElementById("btnReadGrammar");
+        var taGram  = document.getElementById("taGrammar");
         btnGram.onclick = function() {
            if (btnGram.value === "Unlock Grammar") {
                btnGram.value = "Parse Grammar";
-               btnGram.disabled = false;
+               taGram.readOnly = false;
+               taGram.disabled = false;
            } else {
+               /* btnGram.value === "Parse Grammar" */
+               parseGrammar();
                btnGram.value = "Unlock Grammar";
-               btnGram.disabled = true;
-               alert("Woot!  Grammar has been fake parsed, and locked again.");
+               taGram.readOnly = true;
+             // alert("Woot!  Grammar has been parsed, and locked again.");
            }
         };
         logD("in webPageInterface/init, assigned onclick... } SEVENTH");
@@ -57,6 +62,32 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
 
     }
 
+    function parseGrammar()
+    {
+        // This is executed as a result of the usr pressing the
+        // "readGrammar" button between the two text areas, above.
+        // Note the <input> element's event handler: onclick="btnReadGrammar_click();
+        // try/catch from http://www.w3schools.com/js/js_errors.asp
+        try {
+            // initGrammar();
+            document.getElementById('taTypeResults').value = "";
+            taMsg('taTypeResults', "Building Started");
+            var inGrammarString = document.getElementById("taGrammar").value;
+            var myGrammar = new Grammar(inGrammarString);
+
+            taMsg('taTypeResults', "Our parsed grammar is: ");
+            taMsg('taTypeResults', myGrammar.prettyString() );
+
+            taMsg('taParseScope', Object.keys(myGrammar.getTerminals()).toString() );
+        }
+        catch (uncaughtException) {
+            var txt;
+            txt="There was an error on this page.\n\n";
+            txt+="Error description: " + uncaughtException.message + "\n\n";
+            txt+="Click OK to continue.\n\n";
+            alert(txt);
+        }
+    }
 
     function resetCompilation() {
         // Clear the message box.
@@ -64,7 +95,6 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
         // Set the initial values for our globals.
     //    errorCount = 0;
     }
-
 
     function btnCompile_click()
     {
@@ -120,8 +150,7 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
     function CreateECOTree(myTreeVarName, myContainer, defaultNodeColor) {
         var newTree;
 
-
-            newTree = new ECOTree(myTreeVarName, myContainer);
+        newTree = new ECOTree(myTreeVarName, myContainer);
         newTree.config.nodeColor = defaultNodeColor || "#9999FF";
         // newTree.config.nodeColor = "#FFAAAA";
      //   newTree.config.colorStyle = ECOTree.CS_LEVEL;
@@ -151,7 +180,6 @@ require(['util', 'lexer', 'parse', 'ecotree', 'domReady'], function(util, lexer,
         newTree.add(14, 13, 'a');
         newTree.add(15, 13, 'tree');
         newTree.UpdateTree();
-
 
         return newTree;
     }
