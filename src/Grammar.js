@@ -1,456 +1,390 @@
-define(['util', 'InBuffer', 'ProductionSet'], function(util, InBuffer, ProductionSet) {
-// define('Grammar',['InBuffer', 'ProductionSet'], function(InBuffer, ProductionSet) {
+/**
+ * @FILE Grammar.js
+ * Created by
+ * @AUTHOR David McDonald
+ */
+define(['util', 'InBuffer', 'BNF', 'ProductionSet', 'Symbol', 'SymbolTable', 'DFA'],
+ function(util,  InBuffer,   BNF,   ProductionSet,   Symbol,   SymbolTable,   DFA ) {
 // our module name is Grammar (based on our file name)
-// we require InBuffer module
 "use strict";
-/* --------  
-   Grammar.js
 
-   Utility functions.
-   -------- */
-// function isNonTerminal(terminalCandidate) { /* binary search through cached nonTerminals list */ }
-// function listNonTerminals() { /* returns (sorted?) array of headNames */ }
-// function indexNonTerminals() { /* if we don't sort BNF itself, this might let us lookup particular nonT faster */ }
-//   but... I really think we will want to sort or hash the BNF 
-// function listTerminals() { /* terminal and kind (corresponding headName) */ }
+// TODO: some planned functions...
 // function validateLL1() { /* CaC Figure 5.4, p. 149  */ }
-// function firstSet(nonTerminal) { /* */ }
 // function deriveEpsilon() { /* */ }
+// function firstSet(nonTerminal) { /* */ }
 // function productionsFor(Non-terminal) { /* */ }   // or is it productionsOf(nonTerminal) ??
-// function 
 
+/**
+ *  Creates a new Grammar
+ *  @constructor
+ *  @param      {String} bnfString multi-line string with grammar to be parsed, in Backus-Naur Form
+ *              see BNF.js for accepted syntax of BNF
+ *  @returns    {Grammar} object (containing text BNF and derived info, such as lists of Terminals and nonTerminals
+ */
 function Grammar(bnfString) {
+    if (!(this instanceof Grammar)) {
+        alert("Grammar constructor says: Please do not forget the 'new' when you call me.");
+        return new Grammar(bnfString);
+    }
+    util.logD("Begin Grammar constructor");
+
+    // TODO: refactor so that constructor only saves bnfString, and init() does the work,
+    //       so that we can move big functions out of constructor and implement as Grammar.prototype functions.
 	var that = this;
+    var uTimer;
 	var startTime;
+    var privateTerminals = {};          // TODO: determine if there is a refactor with fewer redundant categories
+    var privateTerminalKinds = {};
+    var privateTerminalPatterns = {};
+    var privateTerminalChars = {};
+    var privateKeywords = {};
+    var privateNonTerminals = {};
+    var privateLexerSymTab;
+    var dfaForLex = {};
+
+//    var bnfLength;
+    var sortedBnf;
+
+    var goalIndex;
+//    var firstChar;
+//    var lastIndex;
+//    var ii;
+
     // safari for windows does not support window.performance.now
-    if ('undefined' !== typeof window.performance) {
-        startTime = window.performance.now();
+    //noinspection JSUnresolvedVariable
+    if ('undefined' === typeof window.performance) {
+        uTimer = Date.now;
+    } else {
+        uTimer = function() {  //noinspection JSUnresolvedVariable
+            return window.performance.now(); };
+        // bind does not work in this cast (startTime = uTimer() gets TypeError: Illegal invocation
+        // uTimer = window.performance.now.bind(window);
     }
-	var goalIndex;
-    var firstChar;
-    var lastIndex;
-    var ii;
+    startTime = uTimer();
 
-	console.log("Begin Grammar constructor");
-	this.bnf = this.readBNF(bnfString);
-	goalIndex = 0;					// if we sort the heads, this will probably change.
-
-    var sortResult;
-    var bnfLength;
-    sortResult = this.cloneAndSortBNF(this.bnf);
-    goalIndex = sortResult[0];
-    var sortedBnf = sortResult[1];
-    bnfLength = sortedBnf.length;
-
-    var emptyPrefix = "";
-    var headList = [];
-    for (ii = 0; ii < bnfLength; ++ii) {
-        headList[ii] = emptyPrefix + sortedBnf[ii].headName;
+    if ( ('undefined' === typeof bnfString ) || 0 === bnfString.length ) {
+        throw new TypeError("Error 30: Grammar constructor says: non-empty bnfString is required");
     }
-	var headIndex = util.indexFL(headList);
 
-	// var terminals = function() { return that.initTerminals(); };
-	// var nonTerminals = function() { return that.initNonTerminals(); };
-	var terminalChars;
+    var myBNF_obj = new BNF(bnfString);
+    myBNF_obj.init();
 
-    // we end up with a copy of function prettyString in every BNF, but likely there is only one anyway.
-    this.getIndexFor = function (/* String */ needle) {
-        var needleIndex = -1;        // assume needle not found
-        if (typeof needle !== 'string') {
-            throw new TypeError("needle passed to Grammar.containsHead is NOT a string");
-        }
+    sortedBnf = myBNF_obj.getBNF();
+    this.bnf = sortedBnf;           // TODO: some customers access this.bnf directly.  Hunt them down and change them
+    goalIndex = myBNF_obj.getBNF_Goal_Index();
 
-        firstChar = needle.charAt(0);
-        if (typeof headIndex[firstChar] !== 'undefined') {
-            lastIndex = headIndex[firstChar][1];
-            for (ii = headIndex[firstChar][0]; ii <= lastIndex; ++ii) {
-                if (headList[ii] === needle) {
-                    needleIndex = ii;
-                    break;
-                }
-            }
-        }
-        return needleIndex;
+
+    // we end up with a copy of function getIndexFor in every Grammar, but likely there is only one BNF anyway.
+    this.getIndexFor = function (/** String */ needle) {
+        return myBNF_obj.indexOfProductionSetNamed(needle);
     };
 
 
-    this.hasMemberHeadThis = function (/* String */ needle) { return (this.getIndexFor(needle) !== -1);  };
-    this.hasMemberHeadThat = function (/* String */ needle) { return (that.getIndexFor(needle) !== -1);  };
-
-
-	// we end up with a copy of function prettyString in every BNF, but likely there is only one anyway.
-	this.prettyString = function () { 
-		var prettyStr = ""; 		// will be returned
-		var headCount;				// head ::== body, as per Purple Dragon p.197
-		var curHead;
-
-		headCount = that.bnf.length;
-		// console.log("headCount=" + headCount);
-		for (var ii = 0; ii < headCount; ++ii ) {
-			curHead   =  that.bnf[ii];
-			prettyStr += curHead.prettyString();
-			// console.log(prettyStr);
-		} 
-
-		return prettyStr;
-	};
-
-    var privateTerminals = {};
     var generateTerminalList = function() {
         privateTerminals = {};
         // head ::== body, as per Purple Dragon p.197
         var headCount, ruleCount, gramSymCount;
         var curHead, curRule, curGramSym;
         var ii, jj, kk;
-        var prettyStr = "";
+
         headCount = that.bnf.length;
-        // console.log("headCount=" + headCount);
-        for ( ii = 0; ii < headCount; ++ii ) {
+        for ( ii = 0; ii < headCount; ++ii ) {              // for each head
             curHead   =  that.bnf[ii];
-            // console.log(prettyStr);
-            // for each head
-            // for each rule
-            // for each grammarSymbol
-//        var grammarSym;
+
             ruleCount = curHead.rules.length;
-            for ( jj = 0; jj < ruleCount; ++jj ) {
-                var curRule = curHead.rules[jj];
+            for ( jj = 0; jj < ruleCount; ++jj ) {          // for each rule
+                curRule = curHead.rules[jj];
+
                 gramSymCount = curRule.length;
-                for ( kk = 0; kk < gramSymCount ; ++kk ) {
+                for ( kk = 0; kk < gramSymCount ; ++kk ) {  // for each grammarSymbol
                     curGramSym = curRule[kk];
-                    if (that.hasMemberHeadThat(curGramSym)) {
-                    // if (that.getIndexFor(curGramSym) !== -1) {
+                    // check each GrammarSymbol to see if it can be found on Left Hand Side of ::==
+                    // if (that.hasMemberHeadThat(curGramSym)) {  // currently, either way works.
+                    if (that.hasMemberHead(curGramSym)) {
                         // not a terminal
                     } else {
-                        privateTerminals[curGramSym] = '#';  // TODO this will give us duplicates
+                        privateTerminals[curGramSym] = "#";  // TODO this will give us duplicates ?????
+                        privateTerminalKinds[curGramSym] = curHead.headName;  // TODO this will give us duplicates ?????
+                        // ????? keep head of terminals in hash, instead of '#'?  makes tests harder, but will give
+                        // us some for free like digit
                     }
-                }
-            }
-            // check each GrammarSymbol for LHS
-        }
-      //  var termCount = privateTerminals.length;
-      //  console.log("privateTerminals:", privateTerminals);
-
+                } /* end forEach grammarSymbol */
+            } /* end forEach rule */
+        } /* end forEach head */
+      util.logD("privateTerminals:", privateTerminals);
     };
 
-    generateTerminalList();
+    var generateTerminalPatternAndNonTerminalLists = function() {
+        privateTerminalPatterns = {};
+        privateNonTerminals = {};
+        // privateTerminals = {};
+        // head ::== body, as per Purple Dragon p.197
+        var headCount, ruleCount, gramSymCount;
+        var curHead, curHeadName, curRule, curGramSym;
+        var ii, jj, kk;
 
-    this.getTerminals = function() {return privateTerminals;};
+        headCount = that.bnf.length;
+        for ( ii = 0; ii < headCount; ++ii ) {              // for each head
+            curHead   =  that.bnf[ii];
+            curHeadName = curHead.headName;
 
-    var privateTerminalChars = {};
+            // for this ProductionSet, see if there are ONLY terminals on right
+            // any nonTerminal disqualifies curHead from joining the TerminalPattern club
+            // the only catch is... we did not yet prepare list of nonTerminals.
+            // we do, however, have a list of terminals, so let's start with that.
+            // for us, StringExpr and Id and CharList might be terminalPatterns, but
+            // they do appear on LHS.
+            var hasOnlyTerminals = true;
+            ruleCount = curHead.rules.length;
+            for ( jj = 0; jj < ruleCount && hasOnlyTerminals; ++jj ) {          // for each rule
+                curRule = curHead.rules[jj];
+
+                gramSymCount = curRule.length;
+                for ( kk = 0; kk < gramSymCount && hasOnlyTerminals; ++kk ) {  // for each grammarSymbol
+                    curGramSym = curRule[kk];
+                    if ( ! that.isTerminal(curGramSym)) {
+                        hasOnlyTerminals = false;
+                    }
+                } /* end forEach grammarSymbol */
+            } /* end forEach rule */
+            if ( hasOnlyTerminals ) {
+                // add an entry in hash table
+                // TODO: warn if first char of headName is not lower case
+                privateTerminalPatterns[curHead.headName] = '#';
+            } else {
+                // TODO: warn if first char of headName is not upper case
+                privateNonTerminals[curHead.headName] = '#';
+            }
+        } /* end forEach head */
+      util.logD("privateTerminalPatterns:", privateTerminalPatterns);
+      util.logD("privateNonTerminals:", privateNonTerminals);
+    };
+
     var generateTerminalCharList = function() {
         privateTerminalChars = {};
-        // head ::== body, as per Purple Dragon p.197
-        var terminalCount, charCount;
         var curWord;
-// , curRule, curGramSym;
-        var ii, jj, kk;
-//        var prettyStr = "";
-        terminalCount = privateTerminals.length;
-        // console.log("headCount=" + headCount);
-        var words = [];
+        var ii, jj;
+        var words;  // was initialized to [], but that does not seem to be needed.
         words = Object.keys(privateTerminals);
 
-      //      console.log("curWord:", curWord);
         for ( ii = 0; ii < words.length; ++ii ) {
             curWord   =  words[ii];
-            // console.log(prettyStr);
-            // for each head
-            // for each rule
-            // for each grammarSymbol
-//        var grammarSym;
             var wordLen = curWord.length;
-            // ruleCount = curHead.rules.length;
             for ( jj = 0; jj < wordLen; ++jj ) {
                 privateTerminalChars[curWord.charAt(jj)] = '#';
             }
-            // check each GrammarSymbol for LHS
         }
-        var termCount = privateTerminalChars.length;
-        console.log("privateTerminalChars:", privateTerminalChars);
+//        var myZZTerminalChars;   // was initialized to [], but that does not seem to be needed.
+//        myZZTerminalChars = Object.keys(privateTerminalChars);
+//        myZZTerminalChars.sort();
 
+//        util.logD("myTerminalChars:", myZZTerminalChars.toString());
+        util.logD("privateTerminalChars:", privateTerminalChars);
+//        return myZZTerminalChars;
     };
 
-    generateTerminalCharList();
-
-    this.getTerminalCharList = function() {return privateTerminalChars;};
-
-
-    var privateKeywords = {};
     var generateKeywordList = function() {
-        // stupid, do not clear this here!!! privateTerminalChars = {};
-        // head ::== body, as per Purple Dragon p.197
-        var terminalCount, charCount;
         var curWord;
-// , curRule, curGramSym;
-        var ii, jj, kk;
-//        var prettyStr = "";
-        terminalCount = privateTerminals.length;
-        // console.log("headCount=" + headCount);
-        var words = [];
+        var ii;
+        var words;     // was initialized to [], but that does not seem to be needed.
         words = Object.keys(privateTerminals);
 
-
-      //      console.log("curWord:", curWord);
         for ( ii = 0; ii < words.length; ++ii ) {
             curWord   =  words[ii];
-            if (curWord.length > 1) { privateKeywords[curWord] = '#'; }
+            // TODO: starts with lower case letter and longer than one char
+            //       is probably not the right approach, but it works for our grammar
+            if (curWord.charAt(0).match(/[a-z]/)) {
+                if (curWord.length > 1) { privateKeywords[curWord] = '#'; }
+            }
         }
-      //  var termCount = privateTerminalChars.length;
-      //  console.log("privateKeywords:", privateKeywords);
-
+        util.logD("privateKeywords:", privateKeywords);
     };
 
-    generateKeywordList();
+    var isKeyword = function(/**String*/ candidate) {
+        return ( ! ('undefined' === typeof privateKeywords[candidate]) );
 
-    this.getKeywords = function() {return privateKeywords;};
+//        var bool_by_undefined;
+//        if ( ! ('undefined' === typeof privateKeywords[candidate]) ) {
+//            bool_by_undefined = true;
+//        } else {
+//            bool_by_undefined = false;
+//        }
+//
+//        var candidateIsKeyword = false;
+//        var curWord;
+//        var ii;
+//        var words;     // was initialized to [], but that does not seem to be needed.
+//        words = Object.keys(privateKeywords);
+//
+//        for ( ii = 0; ii < words.length; ++ii ) {
+//            curWord   =  words[ii];
+//            if (curWord === candidate) {
+//                candidateIsKeyword = true;
+//                break;
+//            }
+//        }
+//        util.logD("isKeyword(" + candidate + ") is " + candidateIsKeyword);
+//        return candidateIsKeyword;
+    };
+
+    var isTerminalPattern = function(/**String*/ candidate) {
+        return ( ! ('undefined' === typeof privateTerminalPatterns[candidate]) );
+
+//        var candidateIsTerminalPattern = false;
+//        var curWord;
+//        var ii;
+//        var words;     // was initialized to [], but that does not seem to be needed.
+//        words = Object.keys(privateTerminalPatterns);
+//
+//        for ( ii = 0; ii < words.length; ++ii ) {
+//            curWord   =  words[ii];
+//            if (curWord === candidate) {
+//                candidateIsTerminalPattern = true;
+//                break;
+//            }
+//        }
+//        util.logD("isKeyword(" + candidate + ") is " + candidateIsTerminalPattern);
+//        return candidateIsTerminalPattern;
+    };
 
 
-    var msElapsed = 'performance not available';
-    if ('undefined' !== typeof window.performance) {
-        msElapsed = window.performance.now() - startTime;
-        console.log("End Grammar constructor.  Elapsed time (ms): ", msElapsed.toFixed(3));
+var addKeywordsToSymbolTable = function (/**BNF*/ parsedBNF, /**SymbolTable*/ symTab) {
+    var ii, jj, kk;
+    var bnfRef = parsedBNF.getBNF();                // TODO: is this another sign of need for refactor?
+    var headCount = bnfRef.length;
+    for (ii = 0; ii < headCount; ++ii) {
+        var prodSet = bnfRef[ii];
+        var prodSetLength = prodSet.rules.length;   // TODO: is this another sign of need for refactor?
+        for (jj = 0; jj < prodSetLength; ++jj) {
+            var gramSeq = prodSet.rules[jj];
+            var gramSeqCount = gramSeq.length;
+            for (kk = 0; kk < gramSeqCount; ++kk) {
+                if (isKeyword(gramSeq[kk])) {
+                    if (isTerminalPattern(prodSet.headName)) {
+                        symTab.addSymbol(new Symbol(gramSeq[kk], prodSet.headName));
+                    } else {
+                        // Not a terminal pattern.  must be part of NonTerminal.
+                        // tag with prodSet.Name AND 'Keyword'
+                    //    symTab.addSymbol(new Symbol(gramSeq[kk], prodSet.headName + 'Keyword'));
+                        // instead, tag with own name TODO: see what this attempt at brevity breaks.  Seems OK so far.
+                        symTab.addSymbol(new Symbol(gramSeq[kk], gramSeq[kk]));
+                    }
+                }
+            }
+        } /* end for jj */
     }
-    // note: above method is prettier, and seemed to take a little less time, though no official measurements made.
-    // console.log("End Grammar constructor.  Elapsed time (ms): ", window.performance.now() - startTime);
+    symTab.markLastKeyword();
+}; /* end addKeywordsToSymbolTable */
+
+/**
+ *  Based on the grammar data available, generate the DFA that lex() will use for scanning source code
+ */
+var generateDfaForLex = function () {
+    dfaForLex = new DFA();
+    // setup StringExpr  TODO: add Char list characters, instead of hardcoded
+    // TODO: handle via COMPILER_DIRECTIVE
+    dfaForLex.addDelimitedSequence("StringExpr", '"',
+        " abcdefghijklmnopqrstuvwxyz", '"');
+    // manually setup Id (filter out keywords from symbol table later)
+    //                   (filter out Id's over MAX_ID_LEN later)
+    //                   TODO: add chars in TerminalPattern char, instead of hardcoded
+    // TODO: handle via COMPILER_DIRECTIVE
+    dfaForLex.addUnlimitedSequence("Id", "abcdefghijklmnopqrstuvwxyz");
+
+    // manually setup digit (any one digit 0-9)
+    //                   (filter out Id's over MAX_ID_LEN later)
+    //                   TODO: add chars in TerminalPattern digit, instead of hardcoded
+    //                   TODO: to reject 99, we may need to use same approach as for char
+    // TODO: handle via COMPILER_DIRECTIVE
+    dfaForLex.addOneOfMany("digit", "0123456789");
+
+    /**
+     * Add remaining terminals (those not char, digit or StringExpr) to the DFA
+     */
+    var terminalsToAdd = Object.keys(privateTerminals);
+    terminalsToAdd.forEach(function (term) {
+        if (privateLexerSymTab.isKeyword(term)) {
+            // keywords will be scanned as Id, then compared to keywords in symbol table, so do not add to dfa
+        } else {
+            util.logD("term:", term, "kind:", privateTerminalKinds[term]);
+            // TODO: handle via COMPILER_DIRECTIVE
+            if (/* 'undefined' !== typeof privateTerminalKinds[term] */ 1 === 1
+            && ( privateTerminalKinds[term] === 'digit'
+            || privateTerminalKinds[term] === 'char'
+            || privateTerminalKinds[term] === 'space'
+            || privateTerminalKinds[term] === 'digitTERM'
+            || privateTerminalKinds[term] === 'charTERM'
+            || privateTerminalKinds[term] === 'spaceTERM'
+            || privateTerminalKinds[term] === 'StringExprNT'
+            )
+            ) {
+                // we already added this to DFA
+            } else {
+                dfaForLex.addTerm(term, term);
+            }
+        }
+    });
+
+    util.logD("our DFA:\n", dfaForLex.prettyString());
+}; /* end generateDfaForLex */
+
+
+    // TODO: read the next line and refactor or punt 
+    // (note that this.bnf is already available to users, but perhaps should not be 
+    this.doNotUseThis_getGrammarBNF = /*const */ function () { return myBNF_obj; };
+    this.getGoalIndex = /*const */ function () { return goalIndex; };
+    this.hasMemberHeadThat = function (/* String */ needle) { return (that.getIndexFor(needle) !== -1);  };
+    this.getTerminals = function() {return privateTerminals;};
+    this.getTerminalCharList = function() {return privateTerminalChars;};
+    this.getTerminalPatternList = function() {return privateTerminalPatterns;};
+    this.getNonTerminalList = function() {return privateNonTerminals;};
+    this.getKeywords = function() {return privateKeywords;};
+    this.getSymbolTable = function() {return privateLexerSymTab;};
+    this.getLexerDFA = function() {return dfaForLex;};
+
+    this.isTerminal = function(/* String */ candidate) {
+        return ( 'undefined' !== typeof privateTerminals[candidate] );
+    };
+    this.isNonTerminal = function(/* String */ candidate) {
+        return ( 'undefined' !== typeof privateNonTerminals[candidate] );
+    };
+
+    generateTerminalList();
+    generateTerminalCharList();
+    generateKeywordList();
+    generateTerminalPatternAndNonTerminalLists();
+
+    privateLexerSymTab = new SymbolTable();
+    addKeywordsToSymbolTable(myBNF_obj, privateLexerSymTab);
+//    util.logC("lexSymTab:", privateLexerSymTab.prettyString());
+    generateDfaForLex();
+
+
+//  Just in case we need to punt and not use punctuation as a label for itself
+//  var punctuationLabels = {
+//      '$': 'EndProgram' ,
+//      '{': 'braceL' ,
+//      '}': 'braceR' ,
+//      '(': 'parenL' ,
+//      ')': 'parenR' ,
+//      '=': 'assignment' ,
+//      '"': 'doubleQuote' ,
+//      '+': 'plus' ,
+//  };
+
+    // TODO: knowing what we do now, we can create an objectified BNF
+    // Based on text analysis, build a new, object based BNF
+
+
+    var msElapsed;
+    msElapsed = uTimer() - startTime;
+    // util.logC("End Grammar constructor.  Elapsed time (ms): ", msElapsed.toFixed(3), "\n for gram with nonTerms:\n", this.getNonTerminalList());
+    util.logD("End Grammar constructor.  Elapsed time (ms): ", msElapsed.toFixed(3));
 }
 
 Grammar.prototype.hasMemberHead = function (/* String */ needle) { return (this.getIndexFor(needle) !== -1);  };
 
-Grammar.prototype.cloneAndSortBNF = function(inBnf) {
-    var curHead;
-    var headCount = inBnf.length;
-    var sortedBnf = [];
-    var goalIndex = -1;
-    var goalName = inBnf[0].headName;
-    var ii;
-    // console.log("headCount=" + headCount);
-    for (ii = 0; ii < headCount; ++ii ) {
-        sortedBnf[ii] =  inBnf[ii];
-    }
-    sortedBnf.sort(function(a, b) {
-        var firstBigger = 0;
-        if (a.headName > b.headName) {
-            firstBigger  = 1;
-        } else if (a.headName < b.headName) {
-            firstBigger = -1;
-        }
-        return firstBigger;
-        // return a.headName > b.headName ? 1 : -1;
-    });
-    for (ii = 0; ii < headCount ; ++ii ) {
-        if (goalName === sortedBnf[ii].headName) {
-            goalIndex = ii;
-            break;
-        }
-    }
-    if ( (goalIndex < 0) || (goalName !== sortedBnf[goalIndex].headName) ) {
-        throw new Error("Impossibly, we lost our goal!");
-    }
 
-    var prettySortedStr = '';
-    for (ii = 0; ii < headCount; ++ii ) {
-        curHead   =  sortedBnf[ii];
-        prettySortedStr += curHead.prettyString();
-    }
-    // console.log("pretty");
-    // console.log(prettySortedStr);
-    // console.log("sorted");
-    return [goalIndex, sortedBnf];
-
-};
-
-Grammar.prototype.readBNF = function(bnfString) {
-
-	var bnf = [];			//  of ProductionSets
-	var prodSet;			//  reference to a ProductionSet (headName and corresponding ?derivations?)
-	var grammarSequence = [];
-	var quotedChar;
-	var bnfSourceCode;
-    var bnfLine;
-	var bnfIndex = -1;		// this could cause a problem if we don't get a lhs in first rule.  so don't do that.
-    var prodIndex = 0;
-	var producedBy = '::==';	// RHS is productionFor LHS.  Also, LHS derives RHS.
-	// const pipeSearch = '\|';
-	var headAndBody;
-	var body;
-	var headName;
-	// var bodyHasPipe;
-	// var debugRuleCount;
-	var production = [];
-	
-	bnfSourceCode = new InBuffer(bnfString);
-
-	while ( bnfSourceCode.inputRemaining() ) {
-//		bnfLine = bnfSourceCode.readLine();
-//		headAndBody = bnfLine.split(producedBy);
-		bnfLine = bnfSourceCode.readLine();
-		headAndBody = bnfLine.split(producedBy);
-        if (headAndBody.length === 2) {
-            // we do not want leading or trailing spaces on headName
-            headName = headAndBody[0].trim();
-            // if we do not trim body, split will put extra empty strings front and back if there are leading/trailing spaces
-            body = headAndBody[1].trim();
-
-            if ( headName.length > 0 ) {
-                // we have a new head, not a continuation of productions for previous head
-                // we SHOULD check to make sure it is not already present, but for now, just do not put duplicates in the BNF.
-                prodSet = new ProductionSet(headName);
-                bnfIndex++;
-                prodIndex = 0;
-                bnf.push( prodSet );
-            }
-
-            // ********************
-            // Handle special cases
-            // NOTE: special cases cannot be combined. (though they could, with refactoring and a performance penalty)
-            //       to refactor, check pipes first, then quote. if quote, for nonTerm, scan instead of split.
-            // Supported:
-            //      space ::== ' '
-            //		type ::== int | string | boolean
-            //      nonTerminal ::== sequence of grammar symbols
-            //                  ::== alternate sequence of grammar symbols
-            // Unsupported:
-            //		nonTerminal ::== First Sequence | Second Sequence
-            // var bodyHasSingleQuotes;
-            var testForQuotes = body.match(/\'.\'/);  	// intended ONLY for handling the space char
-            // console.log("body=" + body + " HasSingleQuote" + " where-" + testForQuotes + "-");
-            if ( null !== testForQuotes ) {
-                // bodyHasSingleQuotes = true;
-                // console.log("body=" + body + " HasSingleQuote" + " where-" + testForQuotes + "-");
-                // console.log("testforquotes", testForQuotes);
-                // extract quotedChar, add to Grammar
-                // it seems that testForQuotes is not a string.  so make a new one.
-                var testCopy = "" + testForQuotes;
-                quotedChar = testCopy.charAt(1);
-                // quotedChar = testForQuotes[1];
-                // console.log("quotedChar", quotedChar, "code", quotedChar.charCodeAt());
-                // TODO add to grammar
-                // grammarSequence.length = 1;		// truncate array.  This fails.
-                // grammarSequence = [];		// get a fresh empty array.  This works.
-                // grammarSequence[0] = quotedChar;
-                // adding 'arrayed' quotedChar works, avoids need for grammarSequence[]
-                prodSet.addRule( [quotedChar] );		//================ add here (repeated)
-                //console.log(prodSet);
-            } else {
-                // bodyHasSingleQuotes = false;
-                // var bodyHasPipe;
-                // if ( null === body.match(/\|/) ) { bodyHasPipe = false; } else { bodyHasPipe = true; }
-
-                if ( null !== body.match(/\|/) ) {
-                    // bodyHasPipe = true;
-                    var choices;
-                    choices = body.split(/\|+/);	// split on the pipes
-                    // console.log("body=" + body + " HasPipe=" + bodyHasPipe);
-                    // console.log("choices=" + choices);
-                    // Note: forEach(func) needs ECMAscript 5
-                    choices.forEach(function(token) {
-                        token = token.trim();
-                        // add token as new rule (array with one element)
-                        // grammarSequence.length = 1;		// truncate array.  This fails.  3 hours wasted!
-                        // grammarSequence = [];		// get a fresh empty array.  This works.
-                        // grammarSequence[0] = token;
-                        // console.log("token", token, "gramSeq", grammarSequence);
-                        // adding 'arrayed' token works, avoids need for grammarSequence[]
-                        prodSet.addRule( [token] );		//================ add here (repeated)
-                        // prodSet.addRule( grammarSequence );		//================ add here (repeated)
-                        // bnf[bnfIndex].rules[prodIndex++] = ( grammarSequence );	// old way.  also works
-                    });
-                } else {
-                    // false == (bodyHasPipe || bodyHasSingleQuotes)
-                    // ********************
-                    // Handle normal sequences of grammar symbols
-                    if ( body.length > 0 ) {
-                        // bnf[bnfIndex].rules[prodIndex] = ( body.split(/[\s]+/) );
-                        // bnf[bnfIndex].addRule( body.split(/[\s]+/) );
-                        // prodSet.addRule( body.split(/[\s]+/) );
-                        grammarSequence = [];
-                        grammarSequence = body.split(/[\s]+/);
-                    } else {
-                        // body.length is zero
-                        // empty string creates an element when split,
-                        // but it will be easier to search for epsilon if array length zero,
-                        // rather than length one containing empty string
-                        // bnf[bnfIndex].rules[prodIndex] = ( [] );
-                        // bnf[bnfIndex].addRule( [] );
-                        grammarSequence = [];
-                    }
-                    // bnf[bnfIndex].rules[prodIndex] = ( grammarSequence );	// old way.  also works
-                    prodSet.addRule( grammarSequence );			//================ add here
-                } // end normal sequence
-            } // end noQuotes
-
-        } else {
-            // we did not get exactly a head and body, separated by ::==
-            // if it is just a blank line, ignore and continue.  otherwise, give error message
-            if (bnfLine.trim().length > 0) {
-                throw new Error("50: Invalid Grammar syntax. [" + bnfLine + "]");
-            }
-        }
-/*
-			
-		} else {
-		//	production = body.split(/[\s]+/);
-		}
-		// empty string still creates an element when split.  
-		// more elegant if this rule.length == 0, because then we do not need to check if strlen == 0 to find epsilon
-		if ( body.length > 0 ) {   
-
-		   // bnf[bnfIndex].rules[prodIndex] = ( body.split(/[\s]+/) );
-		   bnf[bnfIndex].addRule( body.split(/[\s]+/) );
-		} else {
-		   // bnf[bnfIndex].rules[prodIndex] = ( [] );
-		   bnf[bnfIndex].addRule( [] );
-		}
-*/		// when debugRuleCount is zero, we have epsilon
-		// debugRuleCount = bnf[bnfIndex].rules[prodIndex].length;
-//		prodIndex++;		// not needed, now that we use addrule
-	} // end while inputRemaining
-
-	return bnf;
-}; // end readBNF
-
-
-
-/*****************************
-Grammar.prototype.terminals = [];
-Grammar.prototype.generateTerminalList = function() {
-    this.terminals = [];
-    // head ::== body, as per Purple Dragon p.197
-    var headCount, ruleCount, gramSymCount;
-    var curHead, curRule, curGramSym;
-    var ii, jj, kk;
-    var prettyStr = "";
-    headCount = this.bnf.length;
-    // console.log("headCount=" + headCount);
-    for ( ii = 0; ii < headCount; ++ii ) {
-        curHead   =  this.bnf[ii];
-        // console.log(prettyStr);
-        // for each head
-        // for each rule
-        // for each grammarSymbol
-//        var grammarSym;
-        ruleCount = curHead.rules.length;
-        for ( jj = 0; jj < ruleCount; ++jj ) {
-            var curRule = curHead.rules[jj];
-            gramSymCount = curRule.length;
-            for ( kk = 0; kk < gramSymCount -99; ++kk ) {
-                curGramSym = curRule[kk];
-              //  if (this.hasMemberHead(curGramSym)) {
-                if (this.getIndexFor(curGramSym) !== -1) {
-                    // not a terminal
-                } else {
-                    this.terminals.push(curGramSym);  // TODO this will give us duplicates
-                }
-            }
-        }
-
-        // check each GrammarSymbol for LHS
-    }
-
-};
-************************************/
-
-    return Grammar;
+return Grammar;
  
-});  // closure for the requirejs structures
+});  // closure for the RequireJS define()

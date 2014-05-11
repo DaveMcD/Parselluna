@@ -1,19 +1,10 @@
-define('InBuffer', [], function() {
-// define('InBuffer', function() {   // works for jstestdriver
+define([], function() {
+// define('InBuffer', [], function() {
 // we are module InBuffer.  We have no dependencies.  If first param not specified, our module name comes from file name.
-// define(['inBufMod'], function(inBufMod) {
 
 // http://stackoverflow.com/questions/1441212/javascript-instance-functions-versus-prototype-functions
 // jsdoc tags listed at https://code.google.com/p/jsdoc-toolkit/wiki/TagReference
-////SIFE var InBuffer = (function() { // scoping
-"use strict"
-//    var tokens = "";
-//    var tokenIndex = 0;
-//    var currentToken = "";
-//    var errorCount = 0;
-//    var EOF = "$";
-// Should we throw exception if attempting to read past end?
-// What is normal result of referring to string[string.Length] ?
+"use strict";
 
 /**
  *  Creates a new InBuffer
@@ -30,14 +21,12 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
     this._lines      = this._sourceCode.split("\n");
     this._lastLineNum   = this._lines.length - 1;
     this._peeksPastEnd = 0;
-//      const EoS        = -1;
-    // is whiteSpace already defined somewhere?
 
    
     this.readThat = function() {
         // might be OK when there are no params, but what if there are params ???  (see bind/call/apply)
         // we need this wrapper so that when invoked by callback, context can be provided to that.read()
-        // (callback used by jstestdriver assertException and assertNoException)
+        // (callback used by js test driver assertException and assertNoException)
         // when specifying the unwrapped prototype function, the callback is invoked without this. context
         return that.read();
     };
@@ -47,10 +36,10 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         return that.peek();
     };
     
-    this.lineTextThat = function() {
+    this.lineTextThat = function(/**Number*/ rowNumber) {
         // see comments for readThat (above)
         // return lineText.apply(that, arguments);
-        return that.lineText();
+        return that.lineText(rowNumber);
     };
     
 } // end constructor
@@ -73,7 +62,7 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         // row === lastRow aka lineNum === lastLine
         curLine = this._lines[row];
         return (col < curLine.length);   // return true if not at end of last line
-    }
+    };
     
 
     /**
@@ -84,7 +73,10 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
     InBuffer.prototype.peek = function() {
         // consider throwing exception if caller peeks past end twice,
         // because they might have gotten into an infinite loop, which is rather rude
-        if ( this._peeksPastEnd > 0 ) { this._peeksPastEnd++; throw new RangeError("In InBuffer.peek(), multiple peeks past end"); }
+        if ( this._peeksPastEnd > 0 ) {
+            this._peeksPastEnd++;
+            throw new RangeError("In InBuffer.peek(), multiple peeks past end");
+        }
 
         // aliases, for improved readability 
         var row = this._lineNum;
@@ -94,9 +86,10 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         var curLine;
         var retChar;
         
-        if ( (row > lastRow + 1) ) { throw new RangeError("In InBuffer.peek(), somebody is trying to peek past End of Source"); }
-//        if ( (this._lineNum > this._lastLineNum + 1) ) { throw new RangeError(); }
-        
+        if ( (row > lastRow + 1) ) {
+            throw new RangeError("In InBuffer.peek(), somebody is trying to peek past End of Source");
+        }
+
         curLine = this._lines[row];
 
         if ( this.inputRemaining() ) { 
@@ -112,10 +105,9 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         return retChar;
         // return this._lines[this._lineNum][this._lineCol];
 		// or maybe return this._lines[this._lineNum].charAt(this._lineCol);
-    }
+    };
     
     // get (and consume) next character  
-    // TODO: rename to wrapped_read ???
     /**
 	 * @description  get (and consume) next character.  First read at end returns "".  After that, throws error
      * @throws       RangeError if reading past end of input
@@ -128,15 +120,17 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
      */
     InBuffer.prototype.read = function() {
         var retChar = "";
-        // consider throwing exception if caller reads past end twice,
-        // because they might have gotten into an infinite loop, which is rather rude
-        if ( (this._lineNum > this._lastLineNum /* + 1 */) ) { throw new RangeError("In InBuffer.read(), somebody is trying to read past End of Source"); }
-//        if ( (this._lineNum > this._lastLineNum /* + 1 */) ) { throw new RangeError(); }
-        if ( !this.inputRemaining() ) { 
+        // Throw exception if caller reads past end twice,
+        // because they might have gotten into an infinite loop
+        if ( (this._lineNum > this._lastLineNum /* + 1 */) ) {
+            throw new RangeError("In InBuffer.read(), somebody is trying to read past End of Source");
+        }
+
+        if ( !this.inputRemaining() ) {
             this._lineNum += 1; // we are now pointing (way) past the end
             return retChar; 
         }
-        // be aware of various CRLF versions
+        // be aware of various CR/LF versions
         // we need for caller to be able to know we are on a new line (mainly for when handling quotes)
         
         if (this._lineCol >= this._lines[this._lineNum].length) {
@@ -153,42 +147,18 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         }
 
         return retChar;
-    }
+    };
 
-    // get (and consume) next character  
-    // TODO: rename to wrapped_read ???
     /**
 	 * @description  skips over any white space characters ( space, tab, newline ) and positions at next non-WS or at end
-     * @returns      {InBuffer object} in case this can be usefully chained.
+     * @returns      {InBuffer} in case this can be usefully chained.
      */
     InBuffer.prototype.skipWhiteSpace = function() {
-/*         var nextChar;
-        var nextCode;
-        var nextRow;
-        var nextCol;
-        var matched;
-        var notDone = 20;
-        while (notDone > 0) {
-        nextChar = this.peek();
-        nextCode = nextChar.charCodeAt(0);
-        nextRow  = this.row();
-        nextCol  = this.col();
-        matched = nextChar.match(/[\s\t\n]/);   // we were peeking here, but that gave us 2 peeks in a row, and boom.
-		// matched is null if we do not get match
-        if ( ! this.inputRemaining ) {break;}
-        if ( null !== matched ) {
-			// it was white space, so eat it.
-            this.read();
-        } else {
-            break;
-        } 
-        notDone--;
- */        
-        while ( this.inputRemaining() && this.peek().match(/[\s\t\n]/) ) { 
+        while ( this.inputRemaining() && this.peek().match(/[\s\t\n]/) ) {
             this.read(); 
         }
         return this;
-    }
+    };
  
     /**
 	 * @description  reports row number for next char to be read
@@ -198,7 +168,7 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
      * @example
      * WARNING: maybe we don't need this function, and instead need "whereDidIJustRead"
      */
-    InBuffer.prototype.row  = /* const */ function() { return this._lineNum + 1; }
+    InBuffer.prototype.row  = /* const */ function() { return this._lineNum + 1; };
 
     /**
 	 * @description  reports column number for next char to be read
@@ -208,11 +178,11 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
      * @example
      * WARNING: maybe we don't need this function, and instead need "whereDidIJustRead"
      */
-     InBuffer.prototype.col      = /* const */ function() { return this._lineCol + 1; }
+     InBuffer.prototype.col      = /* const */ function() { return this._lineCol + 1; };
 
     /**
 	 * @description  reports [row, col, source] for next char to be read
-     * @returns      {Array} with row, cololumn and source of next char
+     * @returns      {Array} with row, column and source of next char
      * @example
      * WARNING: If we are at end of input, this might be past end
      */
@@ -222,7 +192,7 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         returnPos[1] = this._lineCol + 1;
         returnPos[2] = this._sourceLabel;
 		return returnPos; 
-	 }
+	 };
      
      /**
 	 * @description  get (but do not consume) specified line
@@ -230,18 +200,19 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
      * @throws       RangeError if num < 0 or last < num
      * @returns      {String} of length 1, containing next character
      */
-    InBuffer.prototype.lineText = /* const */ function(/**{Number}*/ rowNumber) { 
+    InBuffer.prototype.lineText = /* const */ function(/**Number*/ rowNumber) {
         if ( (arguments.length != 1) || ("number" !== typeof rowNumber) ) {
             throw new TypeError("lineText REQUIRES a row number"); 
         }
         // [num - 1] because we count from zero internally, but interface counts from 1
         var row = rowNumber - 1;
-        // ToDo: reject out of range (including negative) numbers 
+        // Reject out of range (including negative) numbers
         if ( (row < 0) || (this._lastLineNum < row) ) {
-            throw new RangeError("in lineText rowNumber (" + rowNumber + ")was out of bounds.  Max is: " + (this._lastLineNum + 1));
+            throw new RangeError("in lineText rowNumber (" +
+                                  rowNumber + ")was out of bounds.  Max is: " + (this._lastLineNum + 1));
         }
         return this._lines[row]; // This probably returns undefined when calling inBuf.lineText(1.5)
-    }
+    };
 
     // probably best not to mix nextLine and next on same pass through source.
     // should we have same behaviour as .read(), and return an empty string once at end of input?
@@ -262,14 +233,10 @@ function InBuffer(/** @String*/ text, /** @String */ sourceInfo) { // constructo
         } else {
             throw new RangeError("In InBuffer.readLine(), somebody is trying to read past End of Source"); 
         }       
-    }
+    };
     
-    /* InBuffer will be in Global Namespace, unless we wrap in a module. */
+    /* InBuffer would have been in Global Namespace, but we wrapped in a module/define. */
     return InBuffer;
 
-////SIFE })();       // self invoking (anonymous) function expression.  Leave it out if using require.js
-
-
-    
-}); // closure for requirejs
+}); // closure for RequireJS
     

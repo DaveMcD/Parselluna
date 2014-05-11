@@ -35,7 +35,7 @@ define(['util'], function(util) {
             });
 
             it("and both leading and trailing spaces", function () {
-                logC('...Testing "  ab de  "');
+                // logC('...Testing "  ab de  "');
                 expect(util.trim("  ab de  ")).toEqual(trimmed);
             });
 
@@ -53,7 +53,7 @@ define(['util'], function(util) {
             it("should rotate letters by 13", function () {
                 logD("if using the karma test runner and JetBrains IDE");
                 logD("console output will be associated with the test case.");
-                logC('...Testing "NM7aZ"');
+                // logC('...Testing "NM7aZ"');
                 expect(util.rot13("NM7az")).toEqual(rotated);
             });
 
@@ -106,9 +106,9 @@ define(['util'], function(util) {
                 });
 
                 it("and absent initials should be undefined", function () {
-                    var firstAndLast_A = [0, 1];
-                    var firstAndLast_C = [4, 4];
-                    var firstAndLast_z = [7, 8];
+//                    var firstAndLast_A = [0, 1];
+//                    var firstAndLast_C = [4, 4];
+//                    var firstAndLast_z = [7, 8];
                     expect(indexAZ['D']).toBeUndefined();
                     expect(indexAZ['y']).toBeUndefined();
                 });

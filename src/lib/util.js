@@ -28,13 +28,13 @@ define(function() {
         - "g" makes is global, so we get all the whitespace.
         - "" is nothing, which is what we replace the whitespace with.
         */
-
     }
 
-
-    function rot13(str) {   // An easy-to understand implementation of the famous and common Rot13 obfuscator.
-                            // You can do this in three lines with a complex regular expression, but I'd have
-        var retVal = "";    // trouble explaining it in the future.  There's a lot to be said for obvious code.
+    // An easy-to understand implementation of the famous and common Rot13 obfuscator.
+    // You can do this in three lines with a complex regular expression, but I'd have
+    // trouble explaining it in the future.  There's a lot to be said for obvious code.
+    function rot13(str) {
+        var retVal = "";
 
         var strLen = str.length;
         /* for (var ii in str) */  // should have hasOwnProperty check, so just use index.
@@ -66,12 +66,11 @@ define(function() {
         if ('undefined' === typeof messageAreaHandle) {
             /* when using Karma as test-runner, alert() is converted */
             /* to (something like) console.log() */
-            // alert("messageArea has not been initialized.  Call setMessageTextArea(id) first");
             logD("messageArea has not been initialized.  Call setMessageTextArea(id) first");
         } else {
             messageAreaHandle.value += msgString + "\n";
         }
-        logC("Msg> " + msgString);
+        logD("Msg> " + msgString);
     }
 
     /*
@@ -90,20 +89,22 @@ define(function() {
         var arr = sortedStringArray;
         var len = sortedStringArray.length;
         var firstChar = "";
-        var priorChar = "";
+        var priorChar;
         var ii;
         if (len < 2) {
-            if (len < 1) {
-                logC("util.indexFL: useless zero length index returned");
-            } else {
+            if ( 1 == len ) {
                 firstChar = arr[0].charAt(0);
                 firstCharIndex[firstChar] = [0, 0];
+            // } else {
+            //     // ( 0 == len )
+            //     // logC("util.indexFL: useless zero length index object returned");
+            //     firstCharIndex = {};
             }
             return firstCharIndex;
         }
         // now we know there are two or more strings in array, so this will be safe.
         for (ii = 0; ii < len - 1; ++ii) {
-            if (arr[ii] >= arr[ii+1]) { throw new Error("non-sorted (or with duplicates) array passed to util.indexFL")};
+            if (arr[ii] >= arr[ii+1]) { throw new Error("non-sorted (or with duplicates) array passed to util.indexFL")}
         }
 
         firstChar = arr[0].charAt(0);
@@ -136,13 +137,28 @@ define(function() {
         } else {
             taHandle.value += msgString + "\n";
         }
-        logC("Msg> " + msgString);
+        logD("Msg> " + msgString);
+    }
+
+    // from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
+    /*
+     * @param {Array} a
+     * @param {Array} b
+     * @returns {Boolean} true if every a[i] === b[i]
+     */
+    function arraysIdentical(a, b) {
+        var ii = a.length;
+        if (ii != b.length) return false;
+        while (ii--) {
+            if (a[ii] !== b[ii]) return false;
+        }
+        return true;
     }
 
 
     logD("leave util.js define( no dependencies), returning function references FIRST");
     return { trim: trim, rot13: rot13, logC: logC, logD: logD, indexFL: indexFL,
         setMessageTextArea: setMessageTextArea, putMessage: putMessage,
-        addToMessage: addToMessage};
+        addToMessage: addToMessage, arraysIdentical: arraysIdentical };
 
-}); // closure for requirejs define()
+}); // closure for RequireJS define()

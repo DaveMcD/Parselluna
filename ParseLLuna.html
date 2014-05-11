@@ -71,6 +71,14 @@
 <br>
            </form>
            <script type="text/javascript">createTextAreaWithLines('taSourceCode');</script>
+            <select id="selectSource">
+                <!--
+                <option value="starter">Start</option>
+                <option value="TestEmpty">No Input</option>
+                <option value="TestMin">Min Input</option>
+                <option value="All_In_One">All in one</option>
+                -->
+            </select>
             <input type="button" id="btnCompile" value="Compile" /><br>
 
             <label for="taGrammar"></label><br>
@@ -83,6 +91,13 @@ O ::== + | -
             </textarea> <!-- may need to avoid a blank line at end of grammar -->
             <br>
         <!--    <input type="button" id="btnReadGrammar" value="Unlock Grammar" onclick="btnReadGrammar_click();"/> -->
+            <select id="selectGrammar">
+                <!--
+                <option value="starter">Start</option>
+                <option value="TestGrammar1">Test1</option>
+                <option value="Final">Final Project</option>
+                -->
+            </select>
             <input type="button" id="btnReadGrammar" value="Unlock Grammar"/>
             <br>
 
@@ -140,7 +155,6 @@ O ::== + | -
                        <textarea id="taParseScope" readOnly="readOnly" ></textarea><br>
                     </td>
                  </tr>
-                <!--
                  <tr>
                     <td>
                        <label for="taParseAST">Abstract Syntax Tree</label>
@@ -158,23 +172,24 @@ O ::== + | -
                     </td>
                  </tr>
 
-                 <tr>
-                    <td>
-                       <label for="taStatic">Static Table</label>
-                    </td>
-                    <td>
-                       <label for="taJump">Jump Table</label>
-                    </td>
-                 </tr>
-                 <tr>
-                    <td>
-                       <textarea id="taStatic" readOnly="readOnly" ></textarea><br>
-                    </td>
-                    <td>
-                       <textarea id="taJump" readOnly="readOnly" ></textarea><br>
-                    </td>
-                 </tr>
-              -->
+                  <!--
+                   <tr>
+                      <td>
+                         <label for="taStatic">Static Table</label>
+                      </td>
+                      <td>
+                         <label for="taJump">Jump Table</label>
+                      </td>
+                   </tr>
+                   <tr>
+                      <td>
+                         <textarea id="taStatic" readOnly="readOnly" ></textarea><br>
+                      </td>
+                      <td>
+                         <textarea id="taJump" readOnly="readOnly" ></textarea><br>
+                      </td>
+                   </tr>
+                -->
               </table>
         </td>
      </tr>

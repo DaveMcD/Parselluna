@@ -15,11 +15,11 @@ define(['InBuffer'], function(InBuffer) {
     describe("InBuffer", function () {
 
         beforeEach(function () {
-            this.input = "First Line\nSecond Line\n";
-            this.source = new InBuffer(this.input);
+            this.inputText = "First Line\nSecond Line\n";
+            this.source = new InBuffer(this.inputText);
         });
         afterEach(function () {
-            delete this.input;
+            delete this.inputText;
             delete this.source;
         });
 
@@ -73,7 +73,6 @@ define(['InBuffer'], function(InBuffer) {
         }); /* end subset (1) */
 
         describe("(2) has expected initial conditions [not independent]", function () {
-            // var input = "First Line\nSecond Line\n";
             // source will be shared between test cases
             var source = new InBuffer("First Line\nSecond Line\n");
 
@@ -264,7 +263,6 @@ define(['InBuffer'], function(InBuffer) {
                 trimWhiteSource.read(); // n
                 expect(trimWhiteSource.peek()).toEqual('e');
                 trimWhiteSource.read(); // e
-
             });
 
             it("(8.2) Second word is two on 2nd line", function () {

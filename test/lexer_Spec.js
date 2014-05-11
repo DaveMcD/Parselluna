@@ -16,9 +16,6 @@ define(['lexer'], function(lexer) {
 //        beforeEach(function () {
 //            expected = "answer";
 //        });
-//        afterEach(function () {
-//            delete expected;
-//        });
 
         describe("simple cases", function () {
             beforeEach(function () {
@@ -34,7 +31,7 @@ define(['lexer'], function(lexer) {
             it("should handle non-padded one plus two", function () {
                 var expectedTokens = ['1','+','2'];
                 var tokenSequence = lexer('1+2');
-                logC("Testing 1+2");
+                // logC("Testing 1+2");
                 expect(tokenSequence).toEqual(expectedTokens);
             });
 
@@ -48,4 +45,5 @@ define(['lexer'], function(lexer) {
     }); /* end outermost test suite */
 
     logD("leave lexer_Spec.js define()");
-});  /* closure for requireJS define() */
+
+});  /* closure for RequireJS define() */

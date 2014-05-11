@@ -5,6 +5,10 @@
  *      rather than various groups (or suites) of tests,
  *      and prefer NOT to have to tell karma which config file to use,
  *      you may want to rename to use the default name.
+ *      The only difference between the OnlyOne and All config files is the first item
+ *      under files: a different test*main-req.js.
+ *      It is in the test/testOnlyOne-main-req.js file (line 17) that you specify the one spec
+ *      file that you want to run (or a pattern that matches some subset, rather than all)
  */
 
 /*globals module, */
