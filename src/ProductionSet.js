@@ -32,6 +32,7 @@ function ProductionSet(headValue) {
 	var that = this;                 // currently, that is not referenced
 	this.headName = headValue;
 	this.rules = [];					// rename this to rules at first opportunity
+    this.productions = [];
 	// var  hasNonTerminal = true;
 
 
@@ -125,6 +126,54 @@ ProductionSet.prototype.prettyString = function() {
 		ruleStr += "]\n";
 	}
 	prettyStr += ruleStr ;
+	// util.logD(prettyStr);
+	return prettyStr;
+};
+
+ProductionSet.prototype.prettyStringOfObjects = function() {
+	var prettyStr = ""; 		// will be returned
+	var prodStr;
+	// grammarSymbol == Token or nonTerminal: one item from RHS (body)
+	// 	  The hash (#) is not in our vocabulary, and disambiguates our list vs. native array.toString
+	var grammarSymbolSeparator = "#";
+    // ε	&epsilon;	&#949;	&#x3B5;	Lowercase Epsilon  Unicode U+03BF
+    var EPSILON_CODE = 949;
+    var EPSILON_CHAR = String.fromCharCode(EPSILON_CODE);
+    // var EPSILON_HTML = '&epsilon;';
+
+	var prodCount;				// number of productions for a given head.  Must be one or more.
+	                            // The one _could_ be epsilon.
+	var grammarSymbolCount;		// number of grammarSymbols in a rule.  (zero for epsilon)
+	var curProd;				// could be empty (if epsilon)
+	var curProdSet;
+	var jj, kk;
+
+	curProdSet   =  this;
+	// prettyStr += curHead.headName.toString() + "::==\n";
+	prettyStr += curProdSet.head.prettyString() + "::==\n";
+	// a NonTerminal, should be tagged .NT or .TP
+
+	prodCount =  curProdSet.productions.length;
+	prodStr   =  "";
+
+	for (jj = 0; jj < prodCount; ++jj) {
+		curProd = curProdSet.productions[jj];
+		prodStr += "    [";                     // Only Firefox honors space indentation in text area consider .. or --
+		grammarSymbolCount = curProd.gramSeq.length;    // was curProd.length, broken.
+        if ( 0 === grammarSymbolCount ) {
+            prodStr += EPSILON_CHAR;            // Works for text areas.  for HTML, might need &epsilon;
+        }
+		// console.log("grammarSymbolCount=" + grammarSymbolCount);
+		for (kk = 0; kk < grammarSymbolCount; ++kk) {
+			if ( 0 < kk ) {
+                prodStr += grammarSymbolSeparator;
+            }
+            // was curProd[kk], broken, then curProd.gramSeq[kk], gave [object: object]
+			prodStr += curProd.gramSeq[kk].prettyString();
+		}
+		prodStr += "]\n";
+	}
+	prettyStr += prodStr ;
 	// util.logD(prettyStr);
 	return prettyStr;
 };
@@ -230,6 +279,18 @@ ProductionSet.prototype.parseThenAddGrammarSequenceText = function (/** String *
         }
     }
 };
+
+
+// TODO: implement below and have Grammar.js call this instead of setting prodSet.head directly
+    ProductionSet.prototype.setHead = function (/** NonTerminal */ headGramSym) {
+        // TODO: validate param, add jsdoc
+        this.head = headGramSym;
+    };
+
+    ProductionSet.prototype.addProduction = function (/** Production */ newProduction) {
+        // TODO: validate param, add jsdoc
+        this.productions.push(newProduction);
+    };
 
 return ProductionSet;
  

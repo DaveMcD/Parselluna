@@ -11,10 +11,12 @@ define(['GrammarSymbol'], function (GrammarSymbol) {
     /**
      *  Creates a new NonTerminal
      *  @constructor
-     *  @param {String} newName description of param1
-     *  @param {String} newText description of param1
+     *  @param {String} newName name of GrammarSymbol (Block, Expr, braceL, braceR, etc)
+     *  @param {String} [newText] text of GrammarSymbol (Block, Expr, {     , }, etc)
      */
-    function NonTerminal(/** @String*/ newName, /** @String */ newText) { // constructor
+    function NonTerminal(/** @String*/ newName, /** @String= */ newText) { // constructor
+        // TODO: Consider whether NonTerminals always have same name and text.  If so, eliminate newText param
+        // TODO: update jsdoc param descriptions with NonTerminal in mind vs GrammarSymbol
         if (!(this instanceof NonTerminal)) {
             alert("Warning 60: NonTerminal constructor says: Please do not forget the 'new' when you call me.");
             return new NonTerminal(newName, newText);
@@ -38,6 +40,18 @@ define(['GrammarSymbol'], function (GrammarSymbol) {
         // TODO: implement parseIT, add jsdoc for params
       //  alert("NonTerminal.parseIt says I got tokenStream" + tokenStream + "cT" + concreteTree);
         return true;
+    };
+
+    /**
+     * @description  function returning decorated string for printing this NonTerminal
+     * @returns      {String} (Decorated) text string representing this NonTerminal
+     */
+    NonTerminal.prototype.prettyString = function() {
+        // TODO: determine whether we should return name, text or both. add jsdoc for params
+        // TODO: determine if this method should be called prettyString or prettyObjectString
+      //  alert("NonTerminal.parseIt says I got tokenStream" + tokenStream + "cT" + concreteTree);
+
+        return "" + this.name + ".NT";
     };
 
     return NonTerminal;     // return NonTerminal constructor to RequireJS

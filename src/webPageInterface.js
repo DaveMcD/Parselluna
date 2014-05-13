@@ -4,8 +4,8 @@
  */
 
 // using require() because there is something(init) we want executed immediately when loaded
-require(   ['util', 'webPageTestInputs', 'Grammar', 'lexer', 'parse', 'ecotree', 'domReady', 'Symbol', 'SymbolTable', 'PullParser'],
-    function(util,   webPageTestInputs,   Grammar,   lexer,   parse,  notECOTree, domReady, Symbol, SymbolTable, PullParser) {
+require(   ['util', 'webPageTestInputs', 'Grammar', 'ecotree', 'domReady', 'Symbol', 'SymbolTable', 'PullParser'],
+    function(util,   webPageTestInputs,   Grammar,  notECOTree, domReady, Symbol, SymbolTable, PullParser) {
 // use below, if using deferred loading of (something like lexer)
 // require(['require', 'util', 'parse'], function(require, util, parse) {
     "use strict";
@@ -124,6 +124,11 @@ require(   ['util', 'webPageTestInputs', 'Grammar', 'lexer', 'parse', 'ecotree',
             // var grammarBNF = grammarForParse.
             // TODO: read the next line and refactor or punt
             taMsg('taCode', grammarForParse.doNotUseThis_getGrammarBNF().prettyString() );
+
+            taMsg('taCode', "Our parsed, objectified grammar is: ");
+            // var grammarBNF = grammarForParse.
+            // TODO: read the next line and refactor or punt
+            taMsg('taCode', grammarForParse.doNotUseThis_getGrammarBNF().prettyStringOfObjects() );
         }
         catch (uncaughtException) {
             var txt;
@@ -158,10 +163,10 @@ require(   ['util', 'webPageTestInputs', 'Grammar', 'lexer', 'parse', 'ecotree',
         //      it might be worthwhile to do so (say, for example if compiling a compiler)
         // This method results in out of order execution, so in this example,
         // we want parse to also be inside the require closure.
-        if ('undefined' === typeof lexer) {
+        if ('undefined' === typeof PullParser) {        // was typeof lexer
             // lexer undefined, so we need to load it now (and call it lexerParam).
             /* var lexerVar = */
-            require(["lexer"], function (lexerParam) {
+            require(["PullParser"], function (PullParserParam) {  // PullParser was lexer
                 //// Error: Module name "2+3" has not been loaded yet for context: (if calling lexerVar)
                 //// tokenSequence = lexerVar("2+3");
                 logC("in webPageInterface reqP(lex).  calling lexerParam() TENTH!!!");

@@ -256,7 +256,7 @@ function BNF(bnfString) {
     }; // end init
 
     /**
-     *  get the ProductionSet corresponding to headName
+     *  Format the list of ProductionSets included in this BNF
      *  @returns {String} formatted text representing all ProductionSets
      */
     BNF.prototype.prettyString = function () {
@@ -270,6 +270,27 @@ function BNF(bnfString) {
         for (var ii = 0; ii < prodSetCount; ++ii ) {
             curProdSet   =  this.textBnf[ii];
             prettyStr += curProdSet.prettyString();
+        }
+
+        // util.logD(prettyStr);
+        return prettyStr;
+    };
+
+    /**
+     *  Format the list of ProductionSets included in this BNF
+     *  @returns {String} formatted text representing all ProductionSets
+     */
+    BNF.prototype.prettyStringOfObjects = function () {
+        var prettyStr = ""; 		// will be returned
+        var prodSetCount;           // head ::== body, as per Purple Dragon p.197
+        var curProdSet;				// ProdSet is the one head and the set of corresponding bodies (GrammarSequences)
+
+        if ( ! this.initialized) { this.init(); }
+
+        prodSetCount = this.textBnf.length;
+        for (var ii = 0; ii < prodSetCount; ++ii ) {
+            curProdSet   =  this.textBnf[ii];
+            prettyStr += curProdSet.prettyStringOfObjects();
         }
 
         // util.logD(prettyStr);

@@ -76,6 +76,7 @@ define(['lex', 'DFA','Symbol', 'SymbolTable'], function( lex, DFA, Symbol, Symbo
             nakedDFA.addTerm('type'           , 'string' );
             nakedDFA.addTerm('type'           , 'boolean');
             var nakedST = new SymbolTable();
+            // note that unlike our main program, keywords above are not treated as keywords here
             nakedST.markLastKeyword();
 
 
@@ -342,11 +343,154 @@ define(['lex', 'DFA','Symbol', 'SymbolTable'], function( lex, DFA, Symbol, Symbo
             nextToken = this.myLex.getNextToken();
             tokenText = nextToken.lexeme;
             expect(tokenText).toEqual(expectedTokenText6);
-
-
 			// logD("(2) Top Level ");
 		});
-		
+
+        describe("(3) can parse the terminals added to DFA", function () {
+            var nakedDFA = new DFA();
+            nakedDFA.addTerm(termKind['print'], 'print'  );
+            nakedDFA.addTerm(termKind['if']   , 'if'     );
+            nakedDFA.addTerm(termKind['while'], 'while'  );
+            nakedDFA.addTerm('boolval'        , 'false'  );
+            nakedDFA.addTerm('boolval'        , 'true'   );
+            nakedDFA.addTerm('char'           , 'a'    );
+            nakedDFA.addTerm('char'           , 'b' );
+            nakedDFA.addTerm('char'           , 'c');
+            nakedDFA.addTerm('char'           , 'd');
+            nakedDFA.addTerm('char'           , 'e');
+            nakedDFA.addTerm('char'           , 'f');
+            nakedDFA.addTerm('digit'          , '1');
+            nakedDFA.addTerm('='              , '='      );
+            nakedDFA.addTerm('boolop'         , '=='     );
+            nakedDFA.addTerm('boolop'         , '!='     );
+            var nakedST = new SymbolTable();
+            nakedST.markLastKeyword();
+
+            var testLexeme = " a = 1 b == c d != e a === b c =!= d e !== f";
+            var nakedLex = new lex(testLexeme, nakedDFA, nakedST);
+
+            describe("(3.1) when they are padded", function () {
+                it("(3.1.1) should recognize assignment tokens", function () {
+                    var nextToken;
+                    var tokenText;
+                    var tokenKind
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("a");
+                    expect(nextToken.kind).toEqual("char");
+
+                    nextToken = nakedLex.getNextToken();
+                    tokenText = nextToken.lexeme;
+                    expect(tokenText).toEqual("=");
+                    tokenKind = nextToken.kind;
+                    expect(tokenKind).toEqual("=");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("1");
+                    expect(nextToken.kind).toEqual("digit");
+
+                });
+
+                it("(3.1.2) should recognize equality boolop", function () {
+                    var nextToken;
+                    var tokenText;
+                    var tokenKind
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("b");
+                    expect(nextToken.kind).toEqual("char");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("==");
+                    expect(nextToken.kind).toEqual("boolop");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("c");
+                    expect(nextToken.kind).toEqual("char");
+                });
+
+                it("(3.1.3) should recognize inequality boolop", function () {
+                    var nextToken;
+                    var tokenText;
+                    var tokenKind
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("d");
+                    expect(nextToken.kind).toEqual("char");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("!=");
+                    expect(nextToken.kind).toEqual("boolop");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("e");
+                    expect(nextToken.kind).toEqual("char");
+                });
+
+                it("(3.1.4) should treat === as two tokens with error detection in parse", function () {
+                    var nextToken;
+                    var tokenText;
+                    var tokenKind
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("a");
+                    expect(nextToken.kind).toEqual("char");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("==");
+                    expect(nextToken.kind).toEqual("boolop");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("=");
+                    expect(nextToken.kind).toEqual("=");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("b");
+                    expect(nextToken.kind).toEqual("char");
+                });
+
+                it("(3.1.5) should treat =!= as two tokens with error detection in parse", function () {
+                    var nextToken;
+                    var tokenText;
+                    var tokenKind
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("c");
+                    expect(nextToken.kind).toEqual("char");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("=");
+                    expect(nextToken.kind).toEqual("=");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("!=");
+                    expect(nextToken.kind).toEqual("boolop");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("d");
+                    expect(nextToken.kind).toEqual("char");
+                });
+
+                it("(3.1.6) should treat !== as two tokens with error detection in parse", function () {
+                    var nextToken;
+                    var tokenText;
+                    var tokenKind
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("e");
+                    expect(nextToken.kind).toEqual("char");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("!=");
+                    expect(nextToken.kind).toEqual("boolop");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("=");
+                    expect(nextToken.kind).toEqual("=");
+
+                    nextToken = nakedLex.getNextToken();
+                    expect(nextToken.lexeme).toEqual("f");
+                    expect(nextToken.kind).toEqual("char");
+                });
+
+
+            });
+        });
+
     }); /* end outermost test suite */
 
     // logD("leave lex_Spec.js define()");

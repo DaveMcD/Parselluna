@@ -3,8 +3,8 @@
  * Created by
  * @AUTHOR David McDonald
  */
-define(['util', 'InBuffer', 'BNF', 'ProductionSet', 'Symbol', 'SymbolTable', 'DFA'],
- function(util,  InBuffer,   BNF,   ProductionSet,   Symbol,   SymbolTable,   DFA ) {
+define(['util', 'InBuffer', 'BNF', 'Production', 'ProductionSet', 'GrammarSymbol', 'NonTerminal', 'TerminalPattern', 'Terminal', 'Symbol', 'SymbolTable', 'DFA'],
+ function(util,  InBuffer,   BNF,   Production,   ProductionSet,   GrammarSymbol,   NonTerminal,   TerminalPattern,   Terminal,   Symbol,   SymbolTable,   DFA ) {
 // our module name is Grammar (based on our file name)
 "use strict";
 
@@ -348,11 +348,107 @@ var generateDfaForLex = function () {
     this.isNonTerminal = function(/* String */ candidate) {
         return ( 'undefined' !== typeof privateNonTerminals[candidate] );
     };
+    /**
+     *
+     * @param candidate
+     * @returns {string} one of 'NonTerminal', 'TerminalPattern', 'Keyword' or 'Terminal'
+     */
+    this.grammarSymbolType = function(/* String */ candidate) {
+        // First, two special cases due to lex behavior
+        // COMPILER_DIRECTIVE
+        if ('Id' === candidate) { return 'TerminalPattern'; }
+        if ('StringExpr' === candidate) { return 'TerminalPattern'; }
+
+        if (this.isNonTerminal(candidate)) { return 'NonTerminal'; }
+        // TerminalPattern is a kind of NonTerminal
+        if ( isTerminalPattern(candidate)) { return 'TerminalPattern'; }
+        // Keyword is a kind of Terminal
+        if (         isKeyword(candidate)) { return 'Keyword'; }
+        // else if none of the above, must be a plain terminal
+        // mostly punctuation () {} = == !=
+        return ( 'Terminal' );
+    };
 
     generateTerminalList();
     generateTerminalCharList();
     generateKeywordList();
     generateTerminalPatternAndNonTerminalLists();
+
+//    var nextHead;
+//    var
+//    myBNF_obj.getd.forEach(function(prodSet){
+//        if ( this.isNonTerminal(prodSet.headName) ) {}
+//    });
+//    var objectiveBNF = [];
+
+    var generateObjectiveBNF = function (/**BNF*/ parsedBNF) {
+        var ii, jj, kk;
+        var bnfRef = parsedBNF.getBNF();                // TODO: is this another sign of need for refactor?
+        var headCount = bnfRef.length;
+        for (ii = 0; ii < headCount; ++ii) {
+            var prodSet = bnfRef[ii];
+    var a_tempType = that.grammarSymbolType(prodSet.headName);
+            switch ( that.grammarSymbolType(prodSet.headName) ) {
+                case 'NonTerminal':
+                    prodSet.setHead( new NonTerminal(prodSet.headName) );
+                    break;
+                case 'TerminalPattern':
+                    prodSet.setHead( new TerminalPattern(prodSet.headName) );
+                    break;
+                case 'Keyword':
+                case 'Terminal':
+                default:
+                    // Hard to imagine how this could happen, but let's not ignore the possibility
+                    throw new TypeError("Error 31: Grammar.generateObjectiveBNF says: invalid text [" +
+                                        prodSet.headName + "] on LHS of BNF");
+            }
+
+            var prodSetLength = prodSet.rules.length;   // TODO: is this another sign of need for refactor?
+            for (jj = 0; jj < prodSetLength; ++jj) {
+                var gramSeq = prodSet.rules[jj];
+                var gramSeqCount = gramSeq.length;
+                /* TODO: add new empty Production */
+                // we need to keep a handle for the new Production, so we can build it up below
+                var newProd = new Production();
+                prodSet.addProduction(newProd);
+
+                if ( gramSeqCount === 0 ) {
+                /* TODO: push an empty Production (array) to represent epsilon */
+                }
+                for (kk = 0; kk < gramSeqCount; ++kk) {
+                    // either build up a Production one element at a time, then add in one step
+                    //     OR append each element to the Production as we go.
+            var a_gsText = gramSeq[kk];
+            a_tempType = that.grammarSymbolType(gramSeq[kk]);
+            //        switch ( that.grammarSymbolType(gramSeq[kk]) ) {
+                    util.logC("Adding type", a_tempType, a_gsText, "to", ii, prodSet.headName, "rule", jj, "word", kk);
+                    switch ( a_tempType ) {
+                        case 'NonTerminal':
+                            newProd.addGrammarSymbol( new NonTerminal(gramSeq[kk]) );
+                            break;
+                        case 'TerminalPattern':
+                            newProd.addGrammarSymbol( new TerminalPattern(gramSeq[kk]) );
+                            break;
+                        case 'Keyword':
+                            // TODO: need Terminal and (maybe) Keyword class/prototype/objects.
+                            newProd.addGrammarSymbol( new Terminal(gramSeq[kk]) );
+                            break;
+                        case 'Terminal':
+                            newProd.addGrammarSymbol( new Terminal(gramSeq[kk]) );
+                            break;
+                        default:
+                            // Hard to imagine how this could happen, but let's not ignore the possibility
+                            throw new TypeError("Error 31: Grammar.generateObjectiveBNF says: invalid text on RHS of BNF");
+                    }
+
+
+                }
+            } /* end for jj */
+        }
+        // symTab.markLastKeyword();
+    }; /* end generateObjectiveBNF */
+
+    generateObjectiveBNF(myBNF_obj);
 
     privateLexerSymTab = new SymbolTable();
     addKeywordsToSymbolTable(myBNF_obj, privateLexerSymTab);

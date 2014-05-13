@@ -12,9 +12,9 @@ define([], function () {
      *  Creates a new GrammarSymbol
      *  @constructor
      *  @param {String} newName name of GrammarSymbol (Block, Expr, braceL, braceR, etc)
-     *  @param {String} newText text of GrammarSymbol (Block, Expr, {     , }, etc)
+     *  @param {String} [newText] text of GrammarSymbol (Block, Expr, {     , }, etc)
      */
-    function GrammarSymbol(/** @String*/ newName, /** @String */ newText) { // constructor
+    function GrammarSymbol(/** @String*/ newName, /** @String= */ newText) { // constructor
         if (!(this instanceof GrammarSymbol)) {
             alert("Warning 60: GrammarSymbol constructor says: Please do not forget the 'new' when you call me.");
             return new GrammarSymbol(newName, newText);
@@ -25,6 +25,17 @@ define([], function () {
         this.text = newText || this.name;
 
     } // end constructor
+
+    /**
+     * @description  function returning decorated string for printing this NonTerminal
+     * @returns      {String} (Decorated) text string representing this NonTerminal
+     */
+    GrammarSymbol.prototype.prettyString = function() {
+        // TODO: determine whether we should return name, text or both. add jsdoc for params
+        // TODO: determine if this method should be called prettyString or prettyObjectString
+
+        return "" + this.name + ".GS";
+    };
 
 //    GrammarSymbol.prototype = {
 //        /**
