@@ -31,8 +31,10 @@ function ProductionSet(headValue) {
     }
 	var that = this;                 // currently, that is not referenced
 	this.headName = headValue;
-	this.rules = [];					// rename this to rules at first opportunity
+	this.rules = [];					// rename this to textRules at next opportunity??
     this.productions = [];
+    this.symbolDerivesEmpty = false;
+
 	// var  hasNonTerminal = true;
 
 
@@ -84,6 +86,20 @@ function ProductionSet(headValue) {
 	// this.prettyStringThat = function() { return that.prettyString(); };
 
 } // end constructor	
+
+/**
+ * @description  get grammar symbols matching specified name
+ * @param {String} needleGsName Name (of GrammarSymbol) to match
+ * @returns      {Array} containing GrammarSymbols matching
+ */
+ProductionSet.prototype.getRightSideGrammarSymbolsNamed = /* const */ function (needleGsName) {
+    var ii;
+    var matchingGS = [];
+    for (ii = 0; ii<this.productions.length; ++ii) {
+        matchingGS = matchingGS.concat(this.productions[ii].getRightSideGrammarSymbolsNamed(needleGsName));
+    }
+    return matchingGS;
+};
 
 
 ProductionSet.prototype.prettyString = function() {
@@ -158,20 +174,22 @@ ProductionSet.prototype.prettyStringOfObjects = function() {
 
 	for (jj = 0; jj < prodCount; ++jj) {
 		curProd = curProdSet.productions[jj];
-		prodStr += "    [";                     // Only Firefox honors space indentation in text area consider .. or --
-		grammarSymbolCount = curProd.gramSeq.length;    // was curProd.length, broken.
-        if ( 0 === grammarSymbolCount ) {
-            prodStr += EPSILON_CHAR;            // Works for text areas.  for HTML, might need &epsilon;
-        }
-		// console.log("grammarSymbolCount=" + grammarSymbolCount);
-		for (kk = 0; kk < grammarSymbolCount; ++kk) {
-			if ( 0 < kk ) {
-                prodStr += grammarSymbolSeparator;
-            }
-            // was curProd[kk], broken, then curProd.gramSeq[kk], gave [object: object]
-			prodStr += curProd.gramSeq[kk].prettyString();
-		}
-		prodStr += "]\n";
+        prodStr += curProd.prettyStringOfObjects();
+//
+//		prodStr += "    [";                     // Only Firefox honors space indentation in text area consider .. or --
+//		grammarSymbolCount = curProd.gramSeq.length;    // was curProd.length, broken.
+//        if ( 0 === grammarSymbolCount ) {
+//            prodStr += EPSILON_CHAR;            // Works for text areas.  for HTML, might need &epsilon;
+//        }
+//		// console.log("grammarSymbolCount=" + grammarSymbolCount);
+//		for (kk = 0; kk < grammarSymbolCount; ++kk) {
+//			if ( 0 < kk ) {
+//                prodStr += grammarSymbolSeparator;
+//            }
+//            // was curProd[kk], broken, then curProd.gramSeq[kk], gave [object: object]
+//			prodStr += curProd.gramSeq[kk].prettyString();
+//		}
+//		prodStr += "]\n";
 	}
 	prettyStr += prodStr ;
 	// util.logD(prettyStr);
@@ -289,6 +307,7 @@ ProductionSet.prototype.parseThenAddGrammarSequenceText = function (/** String *
 
     ProductionSet.prototype.addProduction = function (/** Production */ newProduction) {
         // TODO: validate param, add jsdoc
+        newProduction.setParentProductionSet(this);       // provide upward reference
         this.productions.push(newProduction);
     };
 

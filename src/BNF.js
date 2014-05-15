@@ -256,6 +256,24 @@ function BNF(bnfString) {
     }; // end init
 
     /**
+     * @description  get grammar symbols matching specified name
+     * @param {String} needleGsName Name (of GrammarSymbol) to match
+     * @returns      {Array} containing GrammarSymbols matching
+     */
+    BNF.prototype.getRightSideGrammarSymbolsNamed = /* const */ function (needleGsName) {
+        var ii;
+        var matchingGS = [];
+
+        if ( ! this.initialized) { this.init(); }
+
+        for (ii = 0; ii<this.textBnf.length; ++ii) {
+            matchingGS = matchingGS.concat(this.textBnf[ii].getRightSideGrammarSymbolsNamed(needleGsName));
+        }
+        return matchingGS;
+    };
+
+
+    /**
      *  Format the list of ProductionSets included in this BNF
      *  @returns {String} formatted text representing all ProductionSets
      */

@@ -21,12 +21,17 @@ define([     'GrammarSymbol', 'NonTerminal', 'TerminalPattern', 'Terminal'],
      *  @param {Array} [grammarSequence] optional array of GrammarSymbols
      */
     function Production(/** @Array=*/ grammarSequence) { // constructor
+        // TODO: Consider implementing class/proto GrammarSequence, vs just an array of GrammarSymbols
         if (!(this instanceof Production)) {
             alert("Warning 60: Production constructor says: Please do not forget the 'new' when you call me.");
             return new Production(grammarSequence);
         }
         var that = this;        // "that" is used to make the object available to the private methods.
         this.gramSeq = [];
+        this.ruleDerivesEmpty = false;
+        // rather than decrementing count, we increment, and derive empty if nullCount == gramSeqLen
+        this.nullableCount = 0;
+        this.parentProductionSet = null; // to be set by the parentProductionSet when adding this Production.
         var newSeqLen;
         var ii;
         if ( ! ('undefined' === typeof grammarSequence) ) {
@@ -34,6 +39,7 @@ define([     'GrammarSymbol', 'NonTerminal', 'TerminalPattern', 'Terminal'],
                 newSeqLen =  grammarSequence.length;
                 if ( newSeqLen === 0 ) {
                     // we are all set - already have an empty this.gramSeq that represents epsilon
+                    // TODO: but we need to mark this ?Production? and ProductionSet with derivesEmpty = true;
                 } else {
                     for (ii = 0; ii < newSeqLen; ++ii) {
                         if ( ! (grammarSequence[ii] instanceof GrammarSymbol) ) {
@@ -42,8 +48,16 @@ define([     'GrammarSymbol', 'NonTerminal', 'TerminalPattern', 'Terminal'],
                         }
                         // TODO: consider verifying we have a subtype of GrammarSymbol, not an actual GrammarSymbol
                         this.gramSeq[ii] = grammarSequence[ii];
+                        // track the parentProduction of the added GrammarSymbol
+                        // It will be needed (perhaps only for NonTerminals) when in derivesEmptyString() to
+                        // decrement count of symbols on RHS (as per CaC Figure 4.7 p.129)
+                        // TODO: consider whether we add this ONLY for NonTerminals.
+                        // this.gramSeq[ii].parentProduction = this;
+                        this.gramSeq[ii].setParentProduction(this);
+                        this.gramSeq[ii].setParentProductionSet(this.parentProductionSet);
                     }
                 }
+
             } else {
                 throw new TypeError("Error 43: Production constructor says: grammarSequence is not an array");
             }
@@ -61,25 +75,41 @@ define([     'GrammarSymbol', 'NonTerminal', 'TerminalPattern', 'Terminal'],
     };
 
 
-//    /**
-//     * @description  get publicValue2
-//     * @returns      {String} containing publicValue2
-//     */
-//    Production.prototype.getPublicValue2 = /* const */ function () {
-//        return this.publicValue2;
-//    };
+    /**
+     * @description  get grammar symbols matching specified name
+     * @param {String} needleGsName Name (of GrammarSymbol) to match
+     * @returns      {Array} containing GrammarSymbols matching
+     */
+    Production.prototype.getRightSideGrammarSymbolsNamed = /* const */ function (needleGsName) {
+        var ii;
+        var matchingGS = [];
+        for (ii = 0; ii<this.gramSeq.length; ++ii) {
+            if (this.gramSeq[ii].name === needleGsName) {
+                matchingGS.push(this.gramSeq[ii]);
+            }
+        }
+        return matchingGS;
+    };
 
 
     /**
-     * @description  sets publicValue2
-     * @param {String} newArg2 description of param
+     * @description  sets reference to container of this Production
+     * @param {ProductionSet} myParent reference to the Production set to which this belongs
      * @throws       Error if called with invalid argument
-     * @example
-     * WARNING: throwme in throws me out.
      */
-    Production.prototype.setPublicValue2 = function (/** @String */ newArg2) {
-        if (newArg2 === 'throwme') throw new Error("Bad newArg2 [" + newArg2 + "]");
-        this.publicValue2 = newArg2;
+    Production.prototype.setParentProductionSet = function (/** Object */ myParent) {
+        // if (newArg2 === 'throwme') throw new Error("Bad newArg2 [" + newArg2 + "]");
+        this.parentProductionSet = myParent;
+    };
+
+    /**
+     * @description  gets reference to container of this Production
+     * @returns {ProductionSet} myParent reference to the Production set to which this belongs
+     * @throws       Error reference has not been set
+     */
+    Production.prototype.getParentProductionSet = function () {
+        if (this.parentProductionSet === null) throw new Error("Error 47: Production.getParentProductionSet was not initialized");
+        return this.parentProductionSet;
     };
 
     /** adds GrammarSymbol to end of current production
@@ -92,6 +122,14 @@ define([     'GrammarSymbol', 'NonTerminal', 'TerminalPattern', 'Terminal'],
            throw new TypeError("Error 46: Production.addGrammarSymbol says: newGramSym must be a (kind of) GrammarSymbol");
            // return new TerminalPattern(newName, newText);
        }
+       // track the parentProduction of the added GrammarSymbol
+       // It will be needed (perhaps only for NonTerminals) when in derivesEmptyString() to
+       // decrement count of symbols on RHS (as per CaC Figure 4.7 p.129)
+       // TODO: consider whether we add this ONLY for NonTerminals.
+       // newGramSym.parentProduction = this;
+       newGramSym.setParentProduction(this);
+       newGramSym.setParentProductionSet(this.parentProductionSet);
+
        this.gramSeq.push(newGramSym);
    };
 

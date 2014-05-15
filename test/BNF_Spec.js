@@ -228,6 +228,7 @@ define(['BNF'], function (BNF) {
                 expect(indexedProdSet.prettyString()).toEqual(expectedPrettyProdSet);
             });
 
+
         }); /* end simple test suite (Grammar) */
         describe("(4) perform well searching itself", function () {
             var stupidDeepBnf;

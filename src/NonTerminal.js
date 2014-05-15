@@ -22,6 +22,7 @@ define(['GrammarSymbol'], function (GrammarSymbol) {
             return new NonTerminal(newName, newText);
         }
         // var that = this;        // "that" is used to make the object available to the private methods.
+        // this.derivesEmpty = false;  // not here - rather in production
 
         // Call the super constructor
         GrammarSymbol.call( this, newName, newText );

@@ -421,7 +421,7 @@ var generateDfaForLex = function () {
             var a_gsText = gramSeq[kk];
             a_tempType = that.grammarSymbolType(gramSeq[kk]);
             //        switch ( that.grammarSymbolType(gramSeq[kk]) ) {
-                    util.logC("Adding type", a_tempType, a_gsText, "to", ii, prodSet.headName, "rule", jj, "word", kk);
+                    // util.logD("Adding type", a_tempType, a_gsText, "to", ii, prodSet.headName, "rule", jj, "word", kk);
                     switch ( a_tempType ) {
                         case 'NonTerminal':
                             newProd.addGrammarSymbol( new NonTerminal(gramSeq[kk]) );
@@ -450,6 +450,10 @@ var generateDfaForLex = function () {
 
     generateObjectiveBNF(myBNF_obj);
 
+    // TODO: mark nullable ProductionSets
+    // TODO: generate ProductionSets.firsts[]
+    // TODO: generate ProductionSets.follows[]
+
     privateLexerSymTab = new SymbolTable();
     addKeywordsToSymbolTable(myBNF_obj, privateLexerSymTab);
 //    util.logC("lexSymTab:", privateLexerSymTab.prettyString());
@@ -471,6 +475,7 @@ var generateDfaForLex = function () {
     // TODO: knowing what we do now, we can create an objectified BNF
     // Based on text analysis, build a new, object based BNF
 
+    this.markNullableProductionSets();
 
     var msElapsed;
     msElapsed = uTimer() - startTime;
@@ -480,7 +485,140 @@ var generateDfaForLex = function () {
 
 Grammar.prototype.hasMemberHead = function (/* String */ needle) { return (this.getIndexFor(needle) !== -1);  };
 
+ /**
+  * @description  get grammar symbols matching specified name
+  *               an implementation of Occurences(Chi) see CaC p. 128
+  * @param {String} needleGsName Name (of GrammarSymbol) to match
+  * @returns      {Array} containing GrammarSymbols matching
+  */
+Grammar.prototype.getRightSideGrammarSymbolsNamed = /* const */ function (needleGsName) {
+     var ii;
+     var matchingGS = [];
 
-return Grammar;
+     // if ( ! this.initialized) { this.init(); }
+
+     for (ii = 0; ii<this.bnf.length; ++ii) {
+         matchingGS = matchingGS.concat(this.bnf[ii].getRightSideGrammarSymbolsNamed(needleGsName));
+     }
+     return matchingGS;
+ };
+
+ /**
+  * @description  mark all nullable ProductionSets and Productions
+  *               an implementation of DerivesEmptyString see CaC p.129 Figure 4.7
+  * @returns      {void}
+  */
+Grammar.prototype.markNullableProductionSets = function () {
+    var ii, jj;
+    var productionSetList = this.bnf;
+    var setListLength = productionSetList.length;
+    var curProdSet, setName, setLength;
+    var curProd;
+    var workList = [];
+
+    var matchingGS = [];
+
+    var checkForEmpty = function(/**Production*/ prod) {
+        var parentSet = prod.getParentProductionSet();
+        var parentSetName = parentSet.head.getName();
+        // only if ALL GS on Right Hand Side are nullable is this production nullable
+        if ( prod.nullableCount >= prod.gramSeq.length) {
+            prod.ruleDerivesEmpty = true;
+            // if ANY Production derives empty, the ProductionSet to which it belongs does also
+            if ( ! parentSet.symbolDerivesEmpty) {
+                parentSet.symbolDerivesEmpty = true;
+                // Add to worklist if not already there.  unshift in, pop out gives FIFO
+                if ( workList.indexOf(parentSetName) === -1 ) { workList.unshift(parentSetName); }
+            }
+        }
+    };
+
+    // if ( ! this.initialized) { this.init(); }
+
+    // All Productions and ProductionSets were initialized with derivesEmpty === false
+    // find all immediately nullable ProductionSets, add to workList via checkForEmpty
+    for (ii = 0; ii<setListLength; ++ii) {
+        curProdSet = productionSetList[ii];
+        setName = curProdSet.head.name;
+        setLength = curProdSet.productions.length;
+        for (jj = 0; jj<setLength; ++jj) {
+            curProd = curProdSet.productions[jj];
+            checkForEmpty(curProd);
+        }
+    }
+
+    // foreach X E WorkList
+    var nullableGrammarSymbols;
+    while ( workList.length > 0 ) {
+        setName = workList.pop();
+        nullableGrammarSymbols = this.getRightSideGrammarSymbolsNamed(setName);
+        nullableGrammarSymbols.forEach(function(gsOnRightHandSide){
+            var productionToCheck = gsOnRightHandSide.getParentProduction();
+            productionToCheck.nullableCount += 1;
+            checkForEmpty(productionToCheck);
+        });
+    }
+ }; /* end markNullableProductionSets */
+
+ /**
+  * @description  derive FirstSets for each NonTerminal
+  *               an implementation inspired by Red Dragon p.189
+  * @returns      {void}
+  * TODO: implement deriveFirstSets, instead of copied markNullable
+  */
+Grammar.prototype.deriveFirstSets = function () {
+    var ii, jj;
+    var productionSetList = this.bnf;
+    var setListLength = productionSetList.length;
+    var curProdSet, setName, setLength;
+    var curProd;
+    var workList = [];
+
+    var matchingGS = [];
+
+    var checkForEmpty = function(/**Production*/ prod) {
+        var parentSet = prod.getParentProductionSet();
+        var parentSetName = parentSet.head.getName();
+        // only if ALL GS on Right Hand Side are nullable is this production nullable
+        if ( prod.nullableCount >= prod.gramSeq.length) {
+            prod.ruleDerivesEmpty = true;
+            // if ANY Production derives empty, the ProductionSet to which it belongs does also
+            if ( ! parentSet.symbolDerivesEmpty) {
+                parentSet.symbolDerivesEmpty = true;
+                // Add to worklist if not already there.  unshift in, pop out gives FIFO
+                if ( workList.indexOf(parentSetName) === -1 ) { workList.unshift(parentSetName); }
+            }
+        }
+    };
+
+    // if ( ! this.initialized) { this.init(); }
+
+    // All Productions and ProductionSets were initialized with derivesEmpty === false
+    // find all immediately nullable ProductionSets, add to workList via checkForEmpty
+    for (ii = 0; ii<setListLength; ++ii) {
+        curProdSet = productionSetList[ii];
+        setName = curProdSet.head.name;
+        setLength = curProdSet.productions.length;
+        for (jj = 0; jj<setLength; ++jj) {
+            curProd = curProdSet.productions[jj];
+            checkForEmpty(curProd);
+        }
+    }
+
+    // foreach X E WorkList
+    var nullableGrammarSymbols;
+    while ( workList.length > 0 ) {
+        setName = workList.pop();
+        nullableGrammarSymbols = this.getRightSideGrammarSymbolsNamed(setName);
+        nullableGrammarSymbols.forEach(function(gsOnRightHandSide){
+            var productionToCheck = gsOnRightHandSide.getParentProduction();
+            productionToCheck.nullableCount += 1;
+            checkForEmpty(productionToCheck);
+        });
+    }
+ }; /* end deriveFirstSets */
+
+
+     return Grammar;
  
 });  // closure for the RequireJS define()

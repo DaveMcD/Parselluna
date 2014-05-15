@@ -17,7 +17,8 @@ define(['Grammar'], function( Grammar ) {
 
     describe("Grammar", function () {
 
-        xdescribe("(1) has individual features that work", function () {
+        describe("(1) has individual features that work", function () {
+            // TODO:  figure out WHY test case results still appear when test specs are commented out.
             it("(1.1) Empty input throws appropriate error", function () {
                 expect(function(){ new Grammar(); }).toThrow(
                     "Error 30: Grammar constructor says: non-empty bnfString is required");
@@ -30,30 +31,42 @@ define(['Grammar'], function( Grammar ) {
                     "Error 51: BNF.init says: Invalid Grammar syntax. [JunkBNF] on line 1");
             });
 
+            // NOTE: Currently, nested describes result in double execution of test cases
+            //       (or, at least, double reporting of test cases)
+            //       For failing cases, often the first 'set' of cases reports 'passed'
+            //       while second set of cases shows the failures.
             describe("(1.3) Minimal complete grammars recognized ...", function () {
                 var expectedPrettyOutput = "Goal::==\n    [$]\n";
 
                 it("(1.3.1) When there are no spaces", function () {
                     var testGrammar = new Grammar("Goal::==$");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.getBNF().prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.3.2) When there are spaces everywhere", function () {
                     var testGrammar = new Grammar("  Goal  ::==  $  ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.bnf.getBNF().prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.3.3) When there are leading and trailing spaces", function () {
                     var testGrammar = new Grammar(" Goal::==$ ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //   var prettyOutput = testGrammar.bnf.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.3.4) When there are spaces around ::== only", function () {
                     var testGrammar = new Grammar("Goal ::== $");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+//    var prettyOutput = testGrammar.bnf.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
@@ -65,19 +78,25 @@ define(['Grammar'], function( Grammar ) {
 
                 it("(1.4.1) as UTF-8 code 949", function () {
                     var testGrammar = new Grammar("EmptyGoal ::== ε ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.4.2) or as empty space", function () {
                     var testGrammar = new Grammar("  EmptyGoal  ::==   ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.4.3) or as zero length text on RHS", function () {
                     var testGrammar = new Grammar("  EmptyGoal  ::==");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
             }); /* end 1.4 */
@@ -87,19 +106,25 @@ define(['Grammar'], function( Grammar ) {
 
                 it("(1.5.1) without spaces", function () {
                     var testGrammar = new Grammar("A_or_B_Goal::==A|B");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.5.2) with spaces everywhere", function () {
                     var testGrammar = new Grammar(" A_or_B_Goal ::== A | B ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.5.3) with some spaces", function () {
                     var testGrammar = new Grammar("A_or_B_Goal ::== A| B");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
             }); /* end 1.5 */
@@ -109,19 +134,25 @@ define(['Grammar'], function( Grammar ) {
 
                 it("(1.6.1) without spaces", function () {
                     var testGrammar = new Grammar("A_or_B_Goal::==A\n::==B");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.6.2) with spaces everywhere", function () {
                     var testGrammar = new Grammar(" A_or_B_Goal ::== A \n ::== B ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.6.3) with some spaces", function () {
                     var testGrammar = new Grammar("A_or_B_Goal::==A \n ::==B");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
             }); /* end 1.6 */
@@ -131,19 +162,25 @@ define(['Grammar'], function( Grammar ) {
 
                 it("(1.7.1) without spaces (and extra \\n)", function () {
                     var testGrammar = new Grammar("A_or_B_or_C_or_D_Goal::==A|B\n::==C|D\n");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.7.2) with spaces everywhere", function () {
                     var testGrammar = new Grammar(" A_or_B_or_C_or_D_Goal ::== A | B \n ::== C | D ");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
 
                 it("(1.7.3) with some spaces", function () {
                     var testGrammar = new Grammar("A_or_B_or_C_or_D_Goal ::== A| B\n::==C |D");
-                    var prettyOutput = testGrammar.prettyString();
+                    var bnf_Object = testGrammar.doNotUseThis_getGrammarBNF();
+                    var prettyOutput = bnf_Object.prettyString();
+                //    var prettyOutput = testGrammar.prettyString();
                     expect( prettyOutput ).toBe( expectedPrettyOutput );
                 });
             }); /* end 1.7 */
@@ -154,7 +191,7 @@ define(['Grammar'], function( Grammar ) {
             }); /* end 1.8 */
 
 
-        });
+        }); /* end 1 */
 
         describe("(2) For simple grammar", function () {
 
@@ -314,6 +351,7 @@ define(['Grammar'], function( Grammar ) {
                     "    [string]\n" +
                     "    [boolean]\n" ;
 
+                // TODO: rename this.bnf to this.realGrammar
                 this.bnf = new Grammar(this.inputText);
             });
 
@@ -334,6 +372,31 @@ define(['Grammar'], function( Grammar ) {
 //                var bnfAsString = this.bnf.prettyGrammarString();
 //                expect(bnfAsString).toBe(this.prettySorted);
 //            });
+
+            it("(3.2) provides list of GrammarSymbols matching name and where they live (via method and via member)", function () {
+                var matchingGramSyms;
+                var prodSetName = "StringExpr";
+
+                // matchingGramSyms = this.bnf.getRightSideGrammarSymbolsNamed('StatementList');
+                matchingGramSyms = this.bnf.getRightSideGrammarSymbolsNamed('Block');
+                // logD("For", 'Block', "Got GramSyms", matchingGramSyms);
+                expect(matchingGramSyms[0].getParentProduction().getParentProductionSet().head.name).toEqual('Program');
+                expect(matchingGramSyms[1].getParentProduction().getParentProductionSet().head.name).toEqual('Statement');
+                expect(matchingGramSyms[0].parentProductionSet.head.name).toEqual('Program');
+                expect(matchingGramSyms[1].parentProductionSet.head.name).toEqual('Statement');
+
+                // NOTE: we need to expect a newline character at the very end of prettyString
+                var expectedPrettyProdSet = "StringExpr::==\n    [\"#spaceTERM#digitTERM#charTERM#\"]\n";
+
+//                var returnedProdSet = this.bnf.getProductionSetNamed(prodSetName);
+//                expect(returnedProdSet.prettyString()).toBe(expectedPrettyProdSet);
+//
+//                // via index lookup of BNF
+//                var returnedIndex = this.bnf.indexOfProductionSetNamed(prodSetName);
+//                var indexedProdSet = this.bnf.getBNF()[returnedIndex];
+//                expect(indexedProdSet.prettyString()).toEqual(expectedPrettyProdSet);
+            });
+
         }); /* end realistic test suite (Grammar) */
 
         describe("(4) perform well searching itself", function () {
@@ -369,6 +432,72 @@ define(['Grammar'], function( Grammar ) {
                   expect(stupidDeepBnf.hasMemberHead('zbc')).toBe(true);
                   expect(stupidDeepBnf.hasMemberHead('ZZtop')).toBe(false);
             });
+
+        });
+
+        describe("(5) properly identifies all nullable NonTerminals", function () {
+            var inputText =
+                "Goal      ::==   DeriveNull_In_3 $ \n" +
+                "DeriveNull_In_3 ::== Takes2 Takes1  \n" +
+                    "	   ::== NeverNull \n" +
+                "Takes2    ::== Takes0 Takes1  \n" +
+                    "	   ::== VarDecl \n" +
+                "Takes1    ::== NeverNull \n" +
+                    "	   ::== Takes0 \n" +
+                "Takes0    ::== NeverNull\n" +
+                    "      ::==  ε \n" +
+                "NeverNull ::== print ( digit )\n" +
+                "VarDecl   ::== type Id \n" +
+                "type      ::== int | string | boolean \n" +
+                "Id        ::== A...C \n" +
+                "digit     ::== 1...2 | 3 \n";
+
+            var nullTestGram = new Grammar(inputText);
+
+            var bnfObj = nullTestGram.doNotUseThis_getGrammarBNF();
+            var prodToTest;
+
+//            prodToTest = bnfObj.getProductionSetNamed('Takes0');
+//            expect(prodToTest.symbolDerivesEmpty).toBe(true);
+//            prodToTest = bnfObj.getProductionSetNamed('NeverNull');
+//            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+
+            // no longer needed here - called during constructor.
+            // nullTestGram.markNullableProductionSets();
+
+            prodToTest = bnfObj.getProductionSetNamed('Goal');
+            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+            prodToTest = bnfObj.getProductionSetNamed('NeverNull');
+            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+            prodToTest = bnfObj.getProductionSetNamed('VarDecl');
+            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+            prodToTest = bnfObj.getProductionSetNamed('type');
+            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+            prodToTest = bnfObj.getProductionSetNamed('Id');
+            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+            prodToTest = bnfObj.getProductionSetNamed('digit');
+            expect(prodToTest.symbolDerivesEmpty).toBe(false);
+
+            prodToTest = bnfObj.getProductionSetNamed('Takes0');
+            expect(prodToTest.symbolDerivesEmpty).toBe(true);
+            prodToTest = bnfObj.getProductionSetNamed('Takes1');
+            expect(prodToTest.symbolDerivesEmpty).toBe(true);
+            prodToTest = bnfObj.getProductionSetNamed('Takes2');
+            expect(prodToTest.symbolDerivesEmpty).toBe(true);
+            prodToTest = bnfObj.getProductionSetNamed('DeriveNull_In_3');
+            expect(prodToTest.symbolDerivesEmpty).toBe(true);
+
+            prodToTest = bnfObj.getProductionSetNamed('NotInGrammar');
+            expect(prodToTest).toBeUndefined();
+
+            // beforeEach(function () {
+            // });
+
+//            it("(5.1) to see if a string can be found on left side (head)", function () {
+//
+//                 //  expect(stupidDeepBnf.hasMemberHead('zbc')).toBe(true);
+//                 //  expect(stupidDeepBnf.hasMemberHead('ZZtop')).toBe(false);
+//            });
 
         });
 
