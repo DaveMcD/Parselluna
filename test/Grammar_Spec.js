@@ -399,7 +399,7 @@ define(['Grammar'], function( Grammar ) {
 
         }); /* end realistic test suite (Grammar) */
 
-        describe("(4) perform well searching itself", function () {
+        xdescribe("(4) perform well searching itself", function () {
             var stupidDeepBnf;
 
             beforeEach(function () {

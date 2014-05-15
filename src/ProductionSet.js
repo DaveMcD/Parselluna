@@ -34,6 +34,9 @@ function ProductionSet(headValue) {
 	this.rules = [];					// rename this to textRules at next opportunity??
     this.productions = [];
     this.symbolDerivesEmpty = false;
+    this.firsts = [];
+    this.firstNTs = [];
+    this.firstsAreFinal = false;
 
 	// var  hasNonTerminal = true;
 

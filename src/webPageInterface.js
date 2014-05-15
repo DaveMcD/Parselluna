@@ -119,6 +119,8 @@ require(   ['util', 'webPageTestInputs', 'Grammar', 'ecotree', 'domReady', 'Symb
             taMsg('taParseAST', Object.keys(grammarForParse.getTerminalPatternList()).toString() );
             taMsg('taParseAST', "\nOur list of non-Terminals: ");
             taMsg('taParseAST', Object.keys(grammarForParse.getNonTerminalList()).toString() );
+            taMsg('taParseCST', "\nOur list of Firsts: ");
+            taMsg('taParseCST', grammarForParse.stringOfFirsts() );
 
             taMsg('taCode', "Our parsed grammar is: ");
             // var grammarBNF = grammarForParse.

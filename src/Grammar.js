@@ -369,6 +369,25 @@ var generateDfaForLex = function () {
         return ( 'Terminal' );
     };
 
+    this.stringOfFirsts = function() {
+        var productionSetList = this.bnf;
+        var setListLength = productionSetList.length;
+
+        var firstsDebugString = '\n';
+        for (var ii = 0; ii<setListLength; ++ii) {
+            var curProdSet = productionSetList[ii];
+            var setName = curProdSet.head.name;
+            firstsDebugString += setName + " firsts: [";
+            for (var jj = 0; jj < curProdSet.firsts.length; ++jj) {
+                var nameOfNonTerminalToAddFrom = curProdSet.firsts[jj];
+                if (jj > 0) { firstsDebugString += ", "; }
+                firstsDebugString += nameOfNonTerminalToAddFrom;
+            }
+            firstsDebugString += "]\n"
+        }
+        return firstsDebugString;
+    };
+
     generateTerminalList();
     generateTerminalCharList();
     generateKeywordList();
@@ -476,6 +495,7 @@ var generateDfaForLex = function () {
     // Based on text analysis, build a new, object based BNF
 
     this.markNullableProductionSets();
+    this.deriveFirstSets();
 
     var msElapsed;
     msElapsed = uTimer() - startTime;
@@ -567,56 +587,183 @@ Grammar.prototype.markNullableProductionSets = function () {
   * TODO: implement deriveFirstSets, instead of copied markNullable
   */
 Grammar.prototype.deriveFirstSets = function () {
-    var ii, jj;
+    var ii, jj, kk;
     var productionSetList = this.bnf;
     var setListLength = productionSetList.length;
-    var curProdSet, setName, setLength;
+    var curProdSet, setName, setLength;     // setLength is same as productionCount
     var curProd;
+    var curGramSymSeq, curGramSymSeqLength, curGramSym, curGramSymType;
     var workList = [];
 
-    var matchingGS = [];
-
-    var checkForEmpty = function(/**Production*/ prod) {
-        var parentSet = prod.getParentProductionSet();
-        var parentSetName = parentSet.head.getName();
-        // only if ALL GS on Right Hand Side are nullable is this production nullable
-        if ( prod.nullableCount >= prod.gramSeq.length) {
-            prod.ruleDerivesEmpty = true;
-            // if ANY Production derives empty, the ProductionSet to which it belongs does also
-            if ( ! parentSet.symbolDerivesEmpty) {
-                parentSet.symbolDerivesEmpty = true;
-                // Add to worklist if not already there.  unshift in, pop out gives FIFO
-                if ( workList.indexOf(parentSetName) === -1 ) { workList.unshift(parentSetName); }
-            }
-        }
-    };
+//    var matchingGS = [];
+//
+//    var checkForEmpty = function(/**Production*/ prod) {
+//        var parentSet = prod.getParentProductionSet();
+//        var parentSetName = parentSet.head.getName();
+//        // only if ALL GS on Right Hand Side are nullable is this production nullable
+//        if ( prod.nullableCount >= prod.gramSeq.length) {
+//            prod.ruleDerivesEmpty = true;
+//            // if ANY Production derives empty, the ProductionSet to which it belongs does also
+//            if ( ! parentSet.symbolDerivesEmpty) {
+//                parentSet.symbolDerivesEmpty = true;
+//                // Add to worklist if not already there.  unshift in, pop out gives FIFO
+//                if ( workList.indexOf(parentSetName) === -1 ) { workList.unshift(parentSetName); }
+//            }
+//        }
+//    };
 
     // if ( ! this.initialized) { this.init(); }
 
-    // All Productions and ProductionSets were initialized with derivesEmpty === false
-    // find all immediately nullable ProductionSets, add to workList via checkForEmpty
+    // All ProductionSets were initialized with firstsAreFinal === false
+    // add all first terminals to firsts, and...
+    // all first NonTerminals to firstNTs (plus any that follow 1 or more nullable NonTerminals)
     for (ii = 0; ii<setListLength; ++ii) {
         curProdSet = productionSetList[ii];
         setName = curProdSet.head.name;
         setLength = curProdSet.productions.length;
+        var prodSetFirstsHaveNT = false;
         for (jj = 0; jj<setLength; ++jj) {
             curProd = curProdSet.productions[jj];
-            checkForEmpty(curProd);
-        }
-    }
+            curGramSymSeq = curProd.gramSeq;
+            curGramSymSeqLength = curGramSymSeq.length;
+            kk = 0;
+            while (kk < curGramSymSeqLength) {
+                curGramSym = curGramSymSeq[kk];
+                curGramSymType = this.grammarSymbolType(curGramSym.name);
+                switch (curGramSymType) {
+                    case 'NonTerminal':
+                        if (curProdSet.firstNTs.indexOf(curGramSym.name) === -1) {
+                            curProdSet.firstNTs.push(curGramSym.name);
+                        }
+                        /* if prodSet for curGramSym.name is nullable, add for kk = 1, etc */
+                        prodSetFirstsHaveNT = true;
+                        break;
+                    case 'TerminalPattern':
+                    case 'Keyword':
+                    case 'Terminal':
+                        if (curProdSet.firsts.indexOf(curGramSym.name) === -1) {
+                            curProdSet.firsts.push(curGramSym.name);
+                        }
+                        break;
+                    default:
+                        // Hard to imagine how this could happen, but let's not ignore the possibility
+                        throw new TypeError("Error 37: Grammar.deriveFirstSets says: unexpected GrammarSymbolType " +
+                                            "[" + curGramSymType + "]");
+                }
+                // util.logD("kk:", kk, "ProductionSet:", setName, "firsts:", curProdSet.firsts, "firstNTs:", curProdSet.firstNTs);
+                if ( ! prodSetFirstsHaveNT) {break;}
+//                if ( 'undefined' === typeof this.doNotUseThis_getGrammarBNF().getProductionSetNamed(curGramSym.name) ) {
+//                    util.logC("no prodSet found for GrammarSymbol [" + curGramSym.name + "}");
+//                    break;
+//                }
+                if (curGramSymType === 'NonTerminal') {
+                    if (this.doNotUseThis_getGrammarBNF().getProductionSetNamed(curGramSym.name).symbolDerivesEmpty) {
+                        // we added a nullable NonTerminal, so next GrammarSymbol is also a candidate
+                        kk += 1;
+                    } else {
+                        break;
+                    }
+                } else {
+                    /* we added an (eventual) terminal, so no need to look for additional NonTerminals */
+                    break;
+                }
+            } /* end while for adding from one production*/
+        } /* end forEach Production in ProductionSet */
+        /* If not prodSetFirstsHaveNT, we can mark prodSet firstsAreFinal as true */
+    } /* end forEach ProductionSet in Grammar (BNF) */
 
-    // foreach X E WorkList
-    var nullableGrammarSymbols;
-    while ( workList.length > 0 ) {
-        setName = workList.pop();
-        nullableGrammarSymbols = this.getRightSideGrammarSymbolsNamed(setName);
-        nullableGrammarSymbols.forEach(function(gsOnRightHandSide){
-            var productionToCheck = gsOnRightHandSide.getParentProduction();
-            productionToCheck.nullableCount += 1;
-            checkForEmpty(productionToCheck);
-        });
-    }
- }; /* end deriveFirstSets */
+    /* now we need to expand firsts[] by firsts[firstNT] until we don't add anything*/
+    var nameOfNonTerminalToAddFrom;
+    var nonTerminalToAddFrom;
+    var terminalToAddCount;
+    var terminalToAdd;
+    var totalAddedTerminals = 0;            // only for debugging or reporting details
+    var recentlyAddedTerminalCount = 1;
+    while ( recentlyAddedTerminalCount > 0 ) {
+        recentlyAddedTerminalCount = 0;
+        for (ii = 0; ii<setListLength; ++ii) {
+            curProdSet = productionSetList[ii];
+            setName = curProdSet.head.name;
+            // TODO: break if curProdSet is NOT NonTerminal
+            for (jj = 0; jj<curProdSet.firstNTs.length; ++jj) {
+                nameOfNonTerminalToAddFrom = curProdSet.firstNTs[jj];
+                nonTerminalToAddFrom = this.doNotUseThis_getGrammarBNF().getProductionSetNamed(nameOfNonTerminalToAddFrom);
+                terminalToAddCount = nonTerminalToAddFrom.firsts.length;
+
+//                curProd = curProdSet.productions[jj];
+//                curGramSymSeq = curProd.gramSeq;
+//                curGramSymSeqLength = curGramSymSeq.length;
+                kk = 0;
+                while (kk < terminalToAddCount) {
+                    terminalToAdd = nonTerminalToAddFrom.firsts[kk];
+                    if (curProdSet.firsts.indexOf(terminalToAdd) === -1) {
+                        recentlyAddedTerminalCount += 1;
+                        curProdSet.firsts.push(terminalToAdd);
+                    }
+
+//                    curGramSym = curGramSymSeq[kk];
+//                    curGramSymType = this.grammarSymbolType(curGramSym.name);
+//                    switch (curGramSymType) {
+//                        case 'NonTerminal':
+//                            if (curProdSet.firstNTs.indexOf(curGramSym.name) === -1) {
+//                                curProdSet.firstNTs.push(curGramSym.name);
+//                            }
+//                            /* if prodSet for curGramSym.name is nullable, add for kk = 1, etc */
+//                            prodSetFirstsHaveNT = true;
+//                            break;
+//                        case 'TerminalPattern':
+//                        case 'Keyword':
+//                        case 'Terminal':
+//                            if (curProdSet.firsts.indexOf(curGramSym.name) === -1) {
+//                                curProdSet.firsts.push(curGramSym.name);
+//                            }
+//                            break;
+//                        default:
+//                            // Hard to imagine how this could happen, but let's not ignore the possibility
+//                            throw new TypeError("Error 37: Grammar.deriveFirstSets says: unexpected GrammarSymbolType " +
+//                            "[" + curGramSymType + "]");
+//                    }
+                    // util.logD("kk:", kk, "Added:", recentlyAddedTerminalCount, "From:", nonTerminalToAddFrom, "To ProductionSet:", setName, "firsts:", curProdSet.firsts, "firstNTs:", curProdSet.firstNTs);
+//                    if ( ! prodSetFirstsHaveNT) {break;}
+//                if ( 'undefined' === typeof this.doNotUseThis_getGrammarBNF().getProductionSetNamed(curGramSym.name) ) {
+//                    util.logC("no prodSet found for GrammarSymbol [" + curGramSym.name + "}");
+//                    break;
+//                }
+//                    if (curGramSymType === 'NonTerminal') {
+//                        if (this.doNotUseThis_getGrammarBNF().getProductionSetNamed(curGramSym.name).symbolDerivesEmpty) {
+//                            // we added a nullable NonTerminal, so next GrammarSymbol is also a candidate
+//                            kk += 1;
+//                        } else {
+//                            break;
+//                        }
+//                    } else {
+//                        /* we added an (eventual) terminal, so no need to look for additional NonTerminals */
+//                        break;
+//                    }
+                    kk += 1;
+                } /* end while for adding from one production*/
+            } /* end forEach Production in ProductionSet */
+            /* If not prodSetFirstsHaveNT, we can mark prodSet firstsAreFinal as true */
+        } /* end forEach ProductionSet in Grammar (BNF) */
+        totalAddedTerminals += recentlyAddedTerminalCount;
+        // util.logD("recently added:", recentlyAddedTerminalCount, "of", totalAddedTerminals);
+    } /* end while */
+
+
+//    // foreach X E WorkList
+//    var nullableGrammarSymbols;
+//    while ( workList.length > 0 ) {
+//        setName = workList.pop();
+//        nullableGrammarSymbols = this.getRightSideGrammarSymbolsNamed(setName);
+//        nullableGrammarSymbols.forEach(function(gsOnRightHandSide){
+//            var productionToCheck = gsOnRightHandSide.getParentProduction();
+//            productionToCheck.nullableCount += 1;
+//            checkForEmpty(productionToCheck);
+//        });
+//    }
+
+    util.logC("Derived firsts: " + this.stringOfFirsts());
+}; /* end deriveFirstSets */
 
 
      return Grammar;
