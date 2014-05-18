@@ -7,7 +7,7 @@
 /*global describe, it, xdescribe, xit, before, beforeEach, after, afterEach, expect, */
 /* inform jshint not to warn that my logging shortcut functions are not defined */
 /*global logC, logD */
-define(['Grammar'], function( Grammar ) {
+define(['Grammar', 'util'], function( Grammar, util ) {
     "use strict";
     // ε	&epsilon;	&#949;	&#x3B5;	Lowercase Epsilon  Unicode U+03BF
     // var EPSILON_CODE = 949;
@@ -435,7 +435,7 @@ define(['Grammar'], function( Grammar ) {
 
         });
 
-        describe("(5) properly identifies all nullable NonTerminals", function () {
+        describe("(5) after grammar analysis is complete", function () {
             var inputText =
                 "Goal      ::==   DeriveNull_In_3 $ \n" +
                 "DeriveNull_In_3 ::== Takes2 Takes1  \n" +
@@ -453,51 +453,75 @@ define(['Grammar'], function( Grammar ) {
                 "digit     ::== 1...2 | 3 \n";
 
             var nullTestGram = new Grammar(inputText);
-
             var bnfObj = nullTestGram.doNotUseThis_getGrammarBNF();
-            var prodToTest;
-
-//            prodToTest = bnfObj.getProductionSetNamed('Takes0');
-//            expect(prodToTest.symbolDerivesEmpty).toBe(true);
-//            prodToTest = bnfObj.getProductionSetNamed('NeverNull');
-//            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-
-            // no longer needed here - called during constructor.
-            // nullTestGram.markNullableProductionSets();
-
-            prodToTest = bnfObj.getProductionSetNamed('Goal');
-            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-            prodToTest = bnfObj.getProductionSetNamed('NeverNull');
-            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-            prodToTest = bnfObj.getProductionSetNamed('VarDecl');
-            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-            prodToTest = bnfObj.getProductionSetNamed('type');
-            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-            prodToTest = bnfObj.getProductionSetNamed('Id');
-            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-            prodToTest = bnfObj.getProductionSetNamed('digit');
-            expect(prodToTest.symbolDerivesEmpty).toBe(false);
-
-            prodToTest = bnfObj.getProductionSetNamed('Takes0');
-            expect(prodToTest.symbolDerivesEmpty).toBe(true);
-            prodToTest = bnfObj.getProductionSetNamed('Takes1');
-            expect(prodToTest.symbolDerivesEmpty).toBe(true);
-            prodToTest = bnfObj.getProductionSetNamed('Takes2');
-            expect(prodToTest.symbolDerivesEmpty).toBe(true);
-            prodToTest = bnfObj.getProductionSetNamed('DeriveNull_In_3');
-            expect(prodToTest.symbolDerivesEmpty).toBe(true);
-
-            prodToTest = bnfObj.getProductionSetNamed('NotInGrammar');
-            expect(prodToTest).toBeUndefined();
+            var prodSetToTest;
 
             // beforeEach(function () {
             // });
 
-//            it("(5.1) to see if a string can be found on left side (head)", function () {
-//
-//                 //  expect(stupidDeepBnf.hasMemberHead('zbc')).toBe(true);
-//                 //  expect(stupidDeepBnf.hasMemberHead('ZZtop')).toBe(false);
-//            });
+            it("(5.1) identifies NON-nullable NonTerminals - after markNullableProductionSets()", function () {
+
+    //            prodSetToTest = bnfObj.getProductionSetNamed('Takes0');
+    //            expect(prodSetToTest.symbolDerivesEmpty).toBe(true);
+    //            prodSetToTest = bnfObj.getProductionSetNamed('NeverNull');
+    //            expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+
+                // no longer needed here - called during constructor.
+                // nullTestGram.markNullableProductionSets();
+
+                prodSetToTest = bnfObj.getProductionSetNamed('Goal');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+                prodSetToTest = bnfObj.getProductionSetNamed('NeverNull');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+                prodSetToTest = bnfObj.getProductionSetNamed('VarDecl');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+                prodSetToTest = bnfObj.getProductionSetNamed('type');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+                prodSetToTest = bnfObj.getProductionSetNamed('Id');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+                prodSetToTest = bnfObj.getProductionSetNamed('digit');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(false);
+            });
+
+            it("(5.2) identifies nullable NonTerminals - after markNullableProductionSets()", function () {
+                prodSetToTest = bnfObj.getProductionSetNamed('Takes0');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(true);
+                prodSetToTest = bnfObj.getProductionSetNamed('Takes1');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(true);
+                prodSetToTest = bnfObj.getProductionSetNamed('Takes2');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(true);
+                prodSetToTest = bnfObj.getProductionSetNamed('DeriveNull_In_3');
+                expect(prodSetToTest.symbolDerivesEmpty).toBe(true);
+
+                prodSetToTest = bnfObj.getProductionSetNamed('NotInGrammar');
+                expect(prodSetToTest).toBeUndefined();
+            });
+
+
+            it("(5.3) properly identifies NonTerminal firstSets - after deriveFirstSets()", function () {
+                var derivedFirsts;
+                var expectedFirsts;
+
+
+                expectedFirsts = ['$', 'print', 'type'];
+                prodSetToTest = bnfObj.getProductionSetNamed('Goal');
+                derivedFirsts = prodSetToTest.firsts.sort();
+                // util.logD("Goal derivedFirsts: ", derivedFirsts);
+                expect(util.arraysIdentical(derivedFirsts, expectedFirsts)).toBe(true);
+
+                expectedFirsts = ['print'];
+                prodSetToTest = bnfObj.getProductionSetNamed('NeverNull');
+                derivedFirsts = prodSetToTest.firsts.sort();
+                // util.logD("NeverNull derivedFirsts: ", derivedFirsts);
+                expect(util.arraysIdentical(derivedFirsts, expectedFirsts)).toBe(true);
+
+                expectedFirsts = ['print', 'type'];
+                prodSetToTest = bnfObj.getProductionSetNamed('Takes2');
+                derivedFirsts = prodSetToTest.firsts.sort();
+                // util.logD("Takes2 derivedFirsts: ", derivedFirsts);
+                expect(util.arraysIdentical(derivedFirsts, expectedFirsts)).toBe(true);
+
+            });
 
         });
 

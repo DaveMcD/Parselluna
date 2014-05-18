@@ -71,6 +71,7 @@ require(   ['util', 'webPageTestInputs', 'Grammar', 'ecotree', 'domReady', 'Symb
         // Draw sample tree at bottom of page
         // var treeDiv = document.getElementById("myParseTreeContainer");
 
+        // TODO: pass CST structure (maybe instead of color) to CreateECOTree, have it build based on contents.
         window.concreteTreeDisplay = CreateECOTree('concreteTreeDisplay',
                                                    'concreteTreeContainer', "#FFCCCC");
         window.abstractTreeDisplay = CreateECOTree('abstractTreeDisplay', 'abstractTreeContainer', "#77FF77");
